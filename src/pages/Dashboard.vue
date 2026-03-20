@@ -1,56 +1,97 @@
 <template>
   <div class="car-service-display">
-    <div class="header p-4 bg-orange-600 text-white flex align-items-center justify-content-between">
-      <div class="logo">
-        <h1>บริการศูนย์รถยนต์</h1>
-      </div>
-      <div class="right-section flex align-items-center">
-        <Button
-          icon="pi pi-desktop"
-          class="fullscreen-btn p-button-rounded p-button-text p-button-lg text-white"
-          @click="toggleFullScreen"
-          :aria-label="isFullScreen ? 'ออกจากโหมดเต็มจอ' : 'แสดงแบบเต็มจอ'"
-          v-tooltip.bottom="isFullScreen ? 'ออกจากโหมดเต็มจอ' : 'แสดงแบบเต็มจอ'"
-        />
-        <div class="current-time text-2xl ml-3">
-          {{ currentTime }}
+    <!-- Header -->
+    <div class="header">
+      <div class="header-inner">
+        <div class="logo flex align-items-center gap-3">
+          <h1>สถานะการจัดส่ง</h1>
+ 
+        </div>
+        <div class="right-section flex align-items-center gap-3">
+          <Button
+            icon="pi pi-desktop"
+            class="fullscreen-btn p-button-rounded p-button-text p-button-lg"
+            @click="toggleFullScreen"
+            :aria-label="isFullScreen ? 'ออกจากโหมดเต็มจอ' : 'แสดงแบบเต็มจอ'"
+            v-tooltip.bottom="isFullScreen ? 'ออกจากโหมดเต็มจอ' : 'แสดงแบบเต็มจอ'"
+          />
+          <div class="current-time"><i class="pi pi-clock mr-2"></i>{{ currentTime }}</div>
         </div>
       </div>
     </div>
 
+    <!-- Content -->
     <div class="content-container">
-      <div class="service-status p-3">
-        <h2 class="text-xl mb-3 text-orange-600">สถานะการให้บริการ</h2>
+      <div class="service-status">
+        <div class="table-header flex align-items-center justify-content-between mb-3 px-3 pt-3">
+          <h2 class="section-title"><i class="pi pi-wrench mr-2"></i>{{ allServices.length }} รายการ</h2>
+          <div class="page-indicator" >หน้า {{ currentIndex + 1 }} / {{ totalPages }}</div>
+        </div>
 
-        <DataTable :value="visibleServices" :rows="itemsPerPage" class="p-datatable-lg" stripedRows :rowHover="true" responsiveLayout="scroll">
-          <Column field="doc_no" header="เลขที่" style="width: 20%">
+        <DataTable :value="visibleServices" :rows="itemsPerPage" class="service-table" stripedRows :rowHover="true" responsiveLayout="scroll">
+          <Column header="ลำดับ" style="width: 8%" class="text-center">
             <template #body="slotProps">
-              <span class="font-bold text-xxl">{{ slotProps.data.doc_no }}</span>
-            </template>
-          </Column>
-          <Column field="cust_name" header="ลูกค้า" style="width: 20%" class="text-xxl">
-            <template #body="slotProps">
-              <span class="text-xxl">{{ slotProps.data.cust_name }}</span>
-            </template>
-          </Column>
-          <Column field="car_code" header="ทะเบียนรถ" style="width: 15%">
-            <template #body="slotProps">
-              <span class="font-bold text-xxl">{{ slotProps.data.car_code }}</span>
-            </template>
-          </Column>
-          <Column field="emp_name" header="ผู้ดำเนินการ" style="width: 20%" class="text-xxl">
-            <template #body="slotProps">
-              <span class="text-xxl">{{ slotProps.data.emp_name }}</span>
+              <div class="row-number">{{ slotProps.index + 1 + currentIndex * itemsPerPage }}</div>
             </template>
           </Column>
 
-          <Column field="status" header="สถานะ" style="width: 20%" class="text-xxl">
+          <Column field="doc_no" header="เลขที่เอกสาร" style="width: 18%">
             <template #body="slotProps">
-              <Tag class="text-xxl" :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" />
+              <div class="doc-no-cell">
+                <span class="doc-no-text">{{ slotProps.data.doc_no }}</span>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="cust_name" header="ลูกค้า" style="width: 22%">
+            <template #body="slotProps">
+              <div class="cust-cell">
+                <div class="cust-name">{{ slotProps.data.cust_name }}</div>
+                <div class="car-brand-sub" v-if="slotProps.data.car_brand">
+                  {{ slotProps.data.car_brand }}
+                </div>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="car_code" header="ทะเบียนรถ" style="width: 17%">
+            <template #body="slotProps">
+              <div class="car-plate">
+                <span>{{ slotProps.data.car_code }}</span>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="emp_name" header="ผู้ดำเนินการ" style="width: 17%">
+            <template #body="slotProps">
+              <div class="emp-cell">
+                <template v-if="slotProps.data.emp_name">
+                  <i class="pi pi-user mr-2"></i>
+                  <span>{{ slotProps.data.emp_name }}</span>
+                </template>
+                <span v-else class="no-emp">— รอมอบหมาย —</span>
+              </div>
+            </template>
+          </Column>
+
+          <Column field="status" header="สถานะ" style="width: 18%">
+            <template #body="slotProps">
+              <Tag class="status-tag" :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" :icon="getStatusIcon(slotProps.data.status)" />
             </template>
           </Column>
         </DataTable>
+
+        <!-- Empty state -->
+        <div v-if="visibleServices.length === 0" class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <p>ไม่มีรายการบริการในขณะนี้</p>
+        </div>
       </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span>ข้อมูลอัพเดตอัตโนมัติทุก 30 วินาที</span>
     </div>
   </div>
 </template>
@@ -61,7 +102,6 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 // Components from PrimeVue
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
-import ProgressBar from "primevue/progressbar";
 import Tag from "primevue/tag";
 import Button from "primevue/button";
 import Tooltip from "primevue/tooltip";
@@ -212,24 +252,36 @@ const processServiceData = async () => {
 const currentIndex = ref(0);
 const itemsPerPage = 10;
 const visibleServices = ref([]);
+const totalPages = computed(() => Math.max(1, Math.ceil(allServices.value.length / itemsPerPage)));
 
-// อัพเดตข้อมูลทุก 30 วินาที และเลื่อนหน้าทุก 30 วินาที
-const updateServices = async () => {
-  const services = await processServiceData();
-  const totalPages = Math.ceil(services.length / itemsPerPage);
+// อัพเดตหน้าที่แสดงจากข้อมูลที่มีอยู่ (ไม่เรียก API)
+const updateVisiblePage = () => {
+  const services = allServices.value;
+  if (services.length === 0) {
+    visibleServices.value = [];
+    return;
+  }
 
-  // แสดงข้อมูลที่คำนวณใหม่ทุกครั้ง
-  visibleServices.value = services.slice(currentIndex.value * itemsPerPage, (currentIndex.value + 1) * itemsPerPage).map((service) => {
-    // คำนวณค่า progress สำหรับแต่ละรายการ
-    const progress = calculateProgress(service);
-    return {
-      ...service,
-      progress: progress,
-    };
-  });
+  const pages = totalPages.value;
+  // ป้องกัน index เกินจำนวนหน้า
+  if (currentIndex.value >= pages) {
+    currentIndex.value = 0;
+  }
 
-  // เลื่อนไปหน้าถัดไป หรือกลับไปหน้าแรก
-  currentIndex.value = (currentIndex.value + 1) % totalPages;
+  visibleServices.value = services.slice(currentIndex.value * itemsPerPage, (currentIndex.value + 1) * itemsPerPage);
+};
+
+// ดึงข้อมูลจาก API
+const fetchServiceData = async () => {
+  await processServiceData();
+  updateVisiblePage();
+};
+
+// เลื่อนหน้าถัดไป
+const rotatePage = () => {
+  const pages = totalPages.value;
+  currentIndex.value = (currentIndex.value + 1) % pages;
+  updateVisiblePage();
 };
 
 // แสดงเวลาปัจจุบัน
@@ -252,9 +304,9 @@ const updateCurrentTime = () => {
 const getStatusSeverity = (status) => {
   switch (status) {
     case "pending":
-      return "secondary";
-    case "in-progress":
       return "warning";
+    case "in-progress":
+      return "info";
     case "completed":
       return "success";
     default:
@@ -275,38 +327,35 @@ const getStatusText = (status) => {
   }
 };
 
+const getStatusIcon = (status) => {
+  switch (status) {
+    case "pending":
+      return "pi pi-clock";
+    case "in-progress":
+      return "pi pi-spin pi-cog";
+    case "completed":
+      return "pi pi-check-circle";
+    default:
+      return "pi pi-question-circle";
+  }
+};
+
 // ตัวแปรสำหรับจัดการ interval
 let serviceUpdateInterval;
 let currentTimeInterval;
 let pageRotationInterval;
-let progressUpdateInterval; // เพิ่ม interval สำหรับอัพเดต progress
 
 onMounted(() => {
   // อัพเดตเวลาทุกวินาที
   updateCurrentTime();
   currentTimeInterval = setInterval(updateCurrentTime, 1000);
 
-  // อัพเดตสถานะบริการทุก 30 วินาที
-  updateServices();
-  serviceUpdateInterval = setInterval(updateServices, 30000);
+  // ดึงข้อมูลจาก API ครั้งแรก และทุก 30 วินาที
+  fetchServiceData();
+  serviceUpdateInterval = setInterval(fetchServiceData, 30000);
 
-  // เลื่อนหน้าทุก 5 วินาที
-  pageRotationInterval = setInterval(() => {
-    updateServices();
-  }, 5000);
-
-  // อัพเดต progress bar ทุก 1 นาที
-  progressUpdateInterval = setInterval(() => {
-    // คำนวณความคืบหน้าใหม่สำหรับทุกรายการ
-    visibleServices.value = visibleServices.value.map((service) => {
-      // คำนวณค่า progress ใหม่
-      const progress = calculateProgress(service);
-      return {
-        ...service,
-        progress: progress,
-      };
-    });
-  }, 30000);
+  // เลื่อนหน้าอัตโนมัติทุก 8 วินาที (ไม่เรียก API ซ้ำ)
+  pageRotationInterval = setInterval(rotatePage, 8000);
 
   // เพิ่ม event listener สำหรับการตรวจจับการเปลี่ยนแปลงโหมดเต็มจอ
   document.addEventListener("fullscreenchange", handleFullScreenChange);
@@ -316,7 +365,6 @@ onUnmounted(() => {
   clearInterval(currentTimeInterval);
   clearInterval(serviceUpdateInterval);
   clearInterval(pageRotationInterval);
-  clearInterval(progressUpdateInterval); // ลบ interval เมื่อ component ถูกทำลาย
 
   // ลบ event listener เมื่อ component ถูกทำลาย
   document.removeEventListener("fullscreenchange", handleFullScreenChange);
@@ -329,17 +377,35 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
-.content-container {
-  flex: 1;
-  overflow: hidden;
-  padding: 1rem;
-}
-
+/* ===== Header ===== */
 .header {
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #e84c10 0%, #d4400a 50%, #c0370a 100%);
+  color: white;
+  box-shadow: 0 4px 20px rgba(232, 76, 16, 0.3);
+  position: relative;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.logo i {
+  opacity: 0.9;
 }
 
 .right-section {
@@ -347,115 +413,364 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.fullscreen-btn {
-  color: white !important;
-  margin-right: 10px;
-  transition: transform 0.2s;
+.service-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
 }
 
-.fullscreen-btn:hover {
-  transform: scale(1.1);
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.service-status {
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  height: calc(100vh - 120px);
-  overflow: auto;
-  border: 1px solid #e0e0e0;
-}
-
-/* ปรับแต่งสีของตาราง */
-:deep(.p-datatable-thead) {
-  background-color: #f4f4f4;
-}
-
-:deep(.p-datatable-thead th) {
-  background-color: #f4f4f4;
-  color: #444;
-  font-weight: bold;
-  border-bottom: 2px solid #e84c10;
-}
-
-:deep(.p-datatable-tbody tr:nth-child(even)) {
-  background-color: #f9f9f9;
-}
-
-:deep(.p-datatable-tbody tr:hover) {
-  background-color: #fff3ed !important;
-}
-
-/* ปรับแต่งรูปแบบเลขที่เอกสาร */
-.document-id {
-  font-family: "Courier New", monospace;
-  font-weight: bold;
-  color: #555;
+.current-time {
+  font-size: 1.3rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 0.5rem 1.2rem;
+  border-radius: 2rem;
   letter-spacing: 0.5px;
 }
 
-/* ปรับแต่ง Tag สถานะ */
+.fullscreen-btn {
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+.fullscreen-btn:hover {
+  transform: scale(1.15);
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ===== Content ===== */
+.content-container {
+  flex: 1;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.service-status {
+  background: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  height: calc(100vh - 150px);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #e84c10;
+  display: flex;
+  align-items: center;
+}
+
+.section-title i {
+  font-size: 1.4rem;
+}
+
+.page-indicator {
+  background: linear-gradient(135deg, #e84c10, #ff6b35);
+  color: white;
+  padding: 0.4rem 1.2rem;
+  border-radius: 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Table Styles ===== */
+:deep(.service-table .p-datatable-thead th) {
+  background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+  color: #333;
+  font-weight: 700;
+  font-size: 1.3rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 3px solid #e84c10;
+  border-top: none;
+  text-align: left;
+}
+
+:deep(.service-table .p-datatable-tbody > tr) {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+:deep(.service-table .p-datatable-tbody > tr > td) {
+  padding: 1rem 1.2rem;
+  font-size: 1.25rem;
+  vertical-align: middle;
+}
+
+:deep(.service-table .p-datatable-tbody > tr:nth-child(even)) {
+  background-color: #fafbfc;
+}
+
+:deep(.service-table .p-datatable-tbody > tr:hover) {
+  background-color: #fff5f0 !important;
+  transform: scale(1.002);
+  box-shadow: 0 2px 8px rgba(232, 76, 16, 0.08);
+}
+
+/* Row Number */
+.row-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #e84c10, #ff6b35);
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 8px rgba(232, 76, 16, 0.3);
+}
+
+/* Document Number */
+.doc-no-cell {
+  display: flex;
+  align-items: center;
+}
+
+.doc-no-text {
+  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #333;
+  letter-spacing: 0.3px;
+}
+
+/* Customer */
+.cust-cell {
+  line-height: 1.4;
+}
+
+.cust-name {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #222;
+}
+
+.car-brand-sub {
+  font-size: 0.95rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Car Plate */
+.car-plate {
+  display: inline-flex;
+  align-items: center;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #333;
+  letter-spacing: 0.5px;
+}
+
+.car-plate i {
+  color: #e84c10;
+}
+
+/* Employee */
+.emp-cell {
+  display: flex;
+  align-items: center;
+  font-size: 1.15rem;
+  color: #444;
+}
+
+.emp-cell i {
+  color: #e84c10;
+}
+
+.no-emp {
+  color: #bbb;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* Status Tag */
+:deep(.status-tag) {
+  font-size: 1.15rem !important;
+  padding: 0.5rem 1.2rem !important;
+  border-radius: 2rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+}
+
 :deep(.p-tag.p-tag-warning) {
-  background-color: #e84c10;
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: white;
+}
+
+:deep(.p-tag.p-tag-info) {
+  background: linear-gradient(135deg, #e84c10, #ff6b35) !important;
+  color: white;
+}
+
+:deep(.p-tag.p-tag-success) {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
   color: white;
 }
 
 :deep(.p-tag.p-tag-secondary) {
-  background-color: #666666;
+  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
   color: white;
 }
 
-/* ปรับแต่ง ProgressBar */
-:deep(.p-progressbar) {
-  height: 20px;
-  border-radius: 10px;
-  margin-bottom: 8px;
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #bbb;
 }
 
-:deep(.waiting-progress .p-progressbar-value) {
-  background-color: #666666;
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
-:deep(.in-progress .p-progressbar-value) {
-  background-color: #e84c10;
+.empty-state p {
+  font-size: 1.4rem;
+  margin: 0;
 }
 
-:deep(.completed-progress .p-progressbar-value) {
-  background-color: #22c55e;
+/* ===== Footer ===== */
+.footer {
+  text-align: center;
+  padding: 0.6rem;
+  background: #f0f0f0;
+  color: #999;
+  font-size: 0.9rem;
+  border-top: 1px solid #e0e0e0;
 }
 
-.progress-text {
-  display: inline-block;
-  margin-left: 10px;
-  font-weight: bold;
-}
-
-/* เพิ่มสำหรับทำให้หน้าจอดูแบบ TV Display ขนาดใหญ่ */
+/* ===== TV Display (Large Screen) ===== */
 @media (min-width: 1200px) {
-  .car-service-display {
+  .logo h1 {
+    font-size: 2.4rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  :deep(.service-table .p-datatable-thead th) {
+    font-size: 1.6rem;
+    padding: 1.2rem 1.5rem;
+  }
+
+  :deep(.service-table .p-datatable-tbody > tr > td) {
+    padding: 1.2rem 1.5rem;
+    font-size: 1.5rem;
+  }
+
+  .row-number {
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  .doc-no-text {
+    font-size: 1.4rem;
+  }
+
+  .cust-name {
+    font-size: 1.5rem;
+  }
+
+  .car-plate {
+    font-size: 1.4rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .emp-cell {
+    font-size: 1.4rem;
+  }
+
+  :deep(.status-tag) {
+    font-size: 1.4rem !important;
+    padding: 0.6rem 1.5rem !important;
+  }
+
+  .current-time {
+    font-size: 1.5rem;
+  }
+
+  .service-count-badge {
+    font-size: 1.3rem;
+  }
+
+  .page-indicator {
     font-size: 1.2rem;
   }
+}
 
-  .text-xl {
-    font-size: 3rem;
+@media (min-width: 1600px) {
+  :deep(.service-table .p-datatable-thead th) {
+    font-size: 1.8rem;
   }
 
-  .text-xxl {
-    font-size: 36px !important;
+  :deep(.service-table .p-datatable-tbody > tr > td) {
+    font-size: 1.7rem;
+    padding: 1.4rem 1.8rem;
   }
 
-  :deep(.p-progressbar) {
-    height: 30px;
+  .row-number {
+    width: 60px;
+    height: 60px;
+    font-size: 1.7rem;
+  }
+
+  .doc-no-text,
+  .cust-name,
+  .car-plate span,
+  .emp-cell span {
+    font-size: 1.6rem;
+  }
+
+  :deep(.status-tag) {
+    font-size: 1.6rem !important;
+    padding: 0.7rem 1.8rem !important;
   }
 }
 
-/* สไตล์เพิ่มเติมสำหรับโหมดเต็มจอ */
+/* ===== Fullscreen Mode ===== */
 :fullscreen .car-service-display {
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
 }
 
 :fullscreen .service-status {
-  height: calc(100vh - 140px);
+  height: calc(100vh - 160px);
+}
+
+/* ===== Animation ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.service-table .p-datatable-tbody > tr) {
+  animation: fadeIn 0.3s ease-out;
 }
 </style>

@@ -21,9 +21,14 @@ export default {
       .get(`/getCarDocDetail?dbname=data2&provider=DATA&doc_no=${doc_no}`)
       .then((res) => res.data);
   },
-  updateCarDoc(doc_no, status,doctime) {
+  getDocList(from_date, to_date, search = "") {
     return instanceApi(true)
-      .get(`/updateCarDoc?dbname=data2&provider=DATA&docno=${doc_no}&status=${status}&doctime=${doctime}`)
+      .get(`/getDocList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}`)
+      .then((res) => res.data);
+  },
+  updateCarDoc(doc_no, status, usercode) {
+    return instanceApi(true)
+      .get(`/updateCarDoc?dbname=data2&provider=DATA&docno=${doc_no}&status=${status}&usercode=${usercode}`)
       .then((res) => res.data);
   },
 };
