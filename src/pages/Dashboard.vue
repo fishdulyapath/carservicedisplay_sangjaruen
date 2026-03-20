@@ -5,7 +5,6 @@
       <div class="header-inner">
         <div class="logo flex align-items-center gap-3">
           <h1>สถานะการจัดส่ง</h1>
- 
         </div>
         <div class="right-section flex align-items-center gap-3">
           <Button
@@ -25,7 +24,7 @@
       <div class="service-status">
         <div class="table-header flex align-items-center justify-content-between mb-3 px-3 pt-3">
           <h2 class="section-title"><i class="pi pi-wrench mr-2"></i>{{ allServices.length }} รายการ</h2>
-          <div class="page-indicator" >หน้า {{ currentIndex + 1 }} / {{ totalPages }}</div>
+          <div class="page-indicator">หน้า {{ currentIndex + 1 }} / {{ totalPages }}</div>
         </div>
 
         <DataTable :value="visibleServices" :rows="itemsPerPage" class="service-table" stripedRows :rowHover="true" responsiveLayout="scroll">
@@ -62,12 +61,16 @@
             </template>
           </Column>
 
-          <Column field="emp_name" header="ผู้ดำเนินการ" style="width: 17%">
+          <Column field="emp_open_job" header="ผู้ดำเนินการ" style="width: 17%">
             <template #body="slotProps">
               <div class="emp-cell">
-                <template v-if="slotProps.data.emp_name">
+                <template v-if="slotProps.data.emp_open_job && slotProps.data.status == 'in-progress'">
                   <i class="pi pi-user mr-2"></i>
-                  <span>{{ slotProps.data.emp_name }}</span>
+                  <span>{{ slotProps.data.emp_open_job }}</span>
+                </template>
+                <template v-if="slotProps.data.emp_close_job && slotProps.data.status == 'completed'">
+                  <i class="pi pi-user mr-2"></i>
+                  <span>{{ slotProps.data.emp_close_job }}</span>
                 </template>
                 <span v-else class="no-emp">— รอมอบหมาย —</span>
               </div>
@@ -321,7 +324,7 @@ const getStatusText = (status) => {
     case "in-progress":
       return "กำลังดำเนินการ";
     case "completed":
-      return "เสร็จแล้ว";
+      return "จัดเสร็จแล้ว";
     default:
       return "ไม่ทราบสถานะ";
   }
