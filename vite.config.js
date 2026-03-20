@@ -32,6 +32,7 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
-  },  base: '/',
+  },
+  base: '/app/',
   title: 'Hello 7777'
 });

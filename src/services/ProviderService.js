@@ -13,7 +13,7 @@ const instanceApi = (authentication = true) =>{
 
     //http://43.240.113.43:8776/stockcardServiceAPI/service/stockservice/
 //http://wrh01.dyndns.org:8088/stockcardServiceAPI//service/stockservice/
-    const http = axios.create({ baseURL: 'http://localhost:8084/CarServiceRESTService/service/carservice/'});
+    const http = axios.create({ baseURL: 'http://cspromart.thaiddns.com:8086/CarServiceRESTService/service/carservice/'});
     http.defaults.headers.common['Content-Type'] = 'application/json';
 
     http.interceptors.response.use(
