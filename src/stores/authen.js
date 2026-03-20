@@ -8,48 +8,41 @@ export const useAuthen = defineStore("authen", {
     loginErrorMsg: "",
     token: localStorage.getItem("_token"),
     userCode: localStorage.getItem("_usercode"),
+    userName: localStorage.getItem("_username"),
     permission: [],
-  })
-  ,
+  }),
   actions: {
-    async login(provider,dbname, username, password) {
-      //let loginSuccess = false,
-      //  errorMsg = "";
-      localStorage._token = ""
-      localStorage._usercode = username
-      this.token = ""
-      this.userCode = username;
-      //console.log("Login : ", username, password)
+    async login(username, password) {
+      localStorage._token = "";
+      localStorage._usercode = "";
+      localStorage._username = "";
+      this.token = "";
+      this.userCode = "";
+      this.userName = "";
+      this.loginErrorMsg = "";
 
-      await AuthService.login(provider,dbname, username, password)
-        .then((response) => {
-          let respData = response.data;
-          // console.log(respData);
-          if (respData.success) {
-            this.loginSuccess = true;
-            localStorage._token = username;
-            localStorage._usercode = username;
-            //commit("SET_TOKEN", { token: respData.token, userCode: username });
-            this.token = username;
-            this.userCode = username;
-          } else {
-            this.loginSuccess = false;
-            this.loginErrorMsg = "Username or password is wrong !";
-          }
-        })
-        .catch((err) => {
+      try {
+        const response = await AuthService.login(username, password);
+        const respData = response.data;
+
+        if (respData.success && respData.data && respData.data.length > 0) {
+          const user = respData.data[0];
+          this.loginSuccess = true;
+          localStorage._token = user.user_code;
+          localStorage._usercode = user.user_code;
+          localStorage._username = user.user_name || user.user_code;
+          this.token = user.user_code;
+          this.userCode = user.user_code;
+          this.userName = user.user_name || user.user_code;
+        } else {
           this.loginSuccess = false;
-          this.loginErrorMsg = err;
-        });
-
-
-      // load permission
-      // if (loginSuccess) {
-      //   let permission = {};      
-      //   //await commit("SET_PERMISSION", { permission: permission });
-      // }
-
-      //await commit("SET_LOGIN", { success: loginSuccess, msgErr: errorMsg });
+          this.loginErrorMsg = "รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        }
+      } catch (err) {
+        this.loginSuccess = false;
+        this.loginErrorMsg = "ไม่สามารถเชื่อมต่อระบบได้";
+        console.error(err);
+      }
     },
     directSetToken(token) {
       localStorage._token = token;
@@ -58,6 +51,7 @@ export const useAuthen = defineStore("authen", {
     logout() {
       localStorage._token = "";
       localStorage._usercode = "";
+      localStorage._username = "";
       localStorage.is_update = "0";
       localStorage.is_approve = "0";
       localStorage.is_create = "0";
@@ -67,35 +61,17 @@ export const useAuthen = defineStore("authen", {
       localStorage.is_report = "0";
       this.token = "";
       this.userCode = "";
-
+      this.userName = "";
+      router.push({ name: 'login' });
     },
     directLogout() {
       localStorage._token = "";
       localStorage._usercode = "";
-
+      localStorage._username = "";
       this.token = "";
       this.userCode = "";
-      router.push({ name: 'login' })
+      this.userName = "";
+      router.push({ name: 'login' });
     },
-    // async checkPermission({ commit }) {
-    //   let errorMsg = "";
-    //   // console.log("chekc perm")
-    //   await UserService.getPermission()
-    //     .then((response) => {
-    //       //console.log(response)
-    //       if (response.success) {
-    //         commit("SET_PERMISSION", { permission: response.permission });
-    //       } else {
-    //         errorMsg = "Something wrong !";
-    //       }
-    //     })
-    //     .catch((err) => {
-    //       errorMsg = err;
-    //     });
-
-    //   if (errorMsg) {
-    //     // show snagbar error
-    //   }
-    // },
   },
 });

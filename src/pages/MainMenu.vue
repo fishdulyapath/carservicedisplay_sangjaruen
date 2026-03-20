@@ -1,6 +1,18 @@
 <template>
   <div class="main-menu-page">
     <div class="menu-header">
+      <div class="header-top">
+        <div class="user-info">
+          <i class="pi pi-user-edit" style="font-size: 1rem"></i>
+          <span>{{ userName }}</span>
+        </div>
+        <Button
+          label="ออกจากระบบ"
+          icon="pi pi-sign-out"
+          class="p-button-sm p-button-outlined p-button-danger logout-btn"
+          @click="doLogout"
+        />
+      </div>
       <h1><i class="pi pi-th-large mr-2"></i>เมนูหลัก</h1>
     </div>
 
@@ -42,10 +54,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useAuthen } from "@/stores/authen";
 
 const router = useRouter();
+const authenStore = useAuthen();
+
+const userName = computed(() => {
+  return localStorage.getItem("_username") || localStorage.getItem("_usercode") || "";
+});
+
+const doLogout = () => {
+  authenStore.logout();
+};
 </script>
 
 <style scoped>
@@ -58,6 +80,32 @@ const router = useRouter();
 .menu-header {
   text-align: center;
   margin-bottom: 2.5rem;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 600px;
+  margin: 0 auto 1rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.logout-btn {
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
 }
 
 .menu-header h1 {

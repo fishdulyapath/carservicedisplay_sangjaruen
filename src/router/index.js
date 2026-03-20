@@ -12,16 +12,12 @@ router.beforeEach((to, from, next) => {
   const isAuth = to.matched.some((record) => record.meta.auth);
   const isHide = to.matched.some((record) => record.meta.guest);
   const forwordauth = to.matched.some((record) => record.meta.forwordauth);
-  // console.log("isAuth :" + isAuth + ", isHide :" + isHide + ", Token :" + loggedIn);
 
-  // console.log("is Forword Auth " + forwordauth)
   if (isAuth && !loggedIn) {
     next({ name: "login" });
   } else if (isHide && loggedIn && forwordauth) {
-    // console.log(to)
-    next({ name: "status_list" });
+    next({ name: "mainmenu" });
   } else {
-    // check token is already
     next();
   }
 });
