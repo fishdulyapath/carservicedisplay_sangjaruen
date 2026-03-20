@@ -4,8 +4,13 @@ import router from './router'
 import PrimeVue from 'primevue/config';
 import { createPinia } from 'pinia'
 import ToastService from 'primevue/toastservice';
+import ConfirmationService from 'primevue/confirmationservice';
 
 import Avatar from 'primevue/avatar';
+import ConfirmDialog from 'primevue/confirmdialog';
+import Tag from 'primevue/tag';
+import AutoComplete from 'primevue/autocomplete';
+import Badge from 'primevue/badge';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import FileUpload from 'primevue/fileupload';
@@ -59,6 +64,7 @@ app.use(pinia);
 app.use(PrimeVue);
 app.use(router);
 app.use(ToastService);
+app.use(ConfirmationService);
 
 app.component(VueQrcode.name, VueQrcode);
 app.component('MultiSelect', MultiSelect);
@@ -92,6 +98,10 @@ app.component('ProgressBar', ProgressBar);
 app.component('Menu', Menu);
 app.component('Sidebar', Sidebar);
 app.component('Toast', Toast);
+app.component('Tag', Tag);
+app.component('ConfirmDialog', ConfirmDialog);
+app.component('AutoComplete', AutoComplete);
+app.component('Badge', Badge);
 app.component('DataTable', DataTable);
 app.component('Column', Column);
 app.component('ColumnGroup', ColumnGroup);

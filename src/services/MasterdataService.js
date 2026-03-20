@@ -21,9 +21,51 @@ export default {
       .get(`/getCarDocDetail?dbname=data2&provider=DATA&doc_no=${doc_no}`)
       .then((res) => res.data);
   },
-  updateCarDoc(doc_no, status,doctime) {
+  updateCarDoc(doc_no, status, doctime) {
     return instanceApi(true)
       .get(`/updateCarDoc?dbname=data2&provider=DATA&docno=${doc_no}&status=${status}&doctime=${doctime}`)
+      .then((res) => res.data);
+  },
+
+  // Document list (จัดการสถานะ)
+  getDocList(from_date, to_date, search = "") {
+    return instanceApi(true)
+      .get(`/getDocList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}`)
+      .then((res) => res.data);
+  },
+
+  // Document history list (สรุปผลการดำเนินการ)
+  getDocHistoryList(from_date, to_date, search = "") {
+    return instanceApi(true)
+      .get(`/getDocHistoryList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}`)
+      .then((res) => res.data);
+  },
+
+  // Employee list
+  getEmployee() {
+    return instanceApi(true)
+      .get(`/getEmployee?dbname=data2&provider=DATA`)
+      .then((res) => res.data);
+  },
+
+  // รับงาน
+  updateGetJob(docno, usercode) {
+    return instanceApi(true)
+      .get(`/updateGetJob?dbname=data2&provider=DATA&docno=${docno}&usercode=${usercode}`)
+      .then((res) => res.data);
+  },
+
+  // ปิดงาน (complete)
+  updateCompleteJob(docno, usercode) {
+    return instanceApi(true)
+      .get(`/updateCompleteJob?dbname=data2&provider=DATA&docno=${docno}&usercode=${usercode}`)
+      .then((res) => res.data);
+  },
+
+  // เสร็จงาน (close)
+  updateCloseJob(docno) {
+    return instanceApi(true)
+      .get(`/updateCloseJob?dbname=data2&provider=DATA&docno=${docno}`)
       .then((res) => res.data);
   },
 };
