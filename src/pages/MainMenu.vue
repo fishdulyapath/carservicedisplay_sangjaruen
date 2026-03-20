@@ -3,7 +3,19 @@
     <div class="menu-header">
       <h1><i class="pi pi-th-large mr-2"></i>เมนูหลัก</h1>
     </div>
+
     <div class="menu-container">
+      <div class="menu-card" @click="router.push({ name: 'dashboard' })">
+        <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)">
+          <i class="pi pi-car" style="font-size: 2.5rem; color: #fff"></i>
+        </div>
+        <div class="menu-info">
+          <h2>สถานะการจัดส่ง</h2>
+          <p>ดูสถานะการจัดส่งแบบเรียลไทม์</p>
+        </div>
+        <i class="pi pi-chevron-right menu-arrow"></i>
+      </div>
+
       <div class="menu-card" @click="router.push({ name: 'status_manage' })">
         <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
           <i class="pi pi-cog" style="font-size: 2.5rem; color: #fff"></i>

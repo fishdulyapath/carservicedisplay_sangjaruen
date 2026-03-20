@@ -54,11 +54,10 @@ export default {
       .get(`/updateGetJob?dbname=data2&provider=DATA&docno=${docno}&usercode=${usercode}`)
       .then((res) => res.data);
   },
-
   // ปิดงาน (complete)
-  updateCompleteJob(docno, usercode) {
+  updateCompleteJob(docno, usercode, remark = "") {
     return instanceApi(true)
-      .get(`/updateCompleteJob?dbname=data2&provider=DATA&docno=${docno}&usercode=${usercode}`)
+      .get(`/updateCompleteJob?dbname=data2&provider=DATA&docno=${docno}&usercode=${usercode}&remark=${encodeURIComponent(remark)}`)
       .then((res) => res.data);
   },
 

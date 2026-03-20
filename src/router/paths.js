@@ -3,6 +3,14 @@
 export default [
   {
     path: "/",
+    name: "",
+    meta: {
+      auth: false,
+    },
+    component: () => import("../pages/MainMenu.vue"),
+  },
+    {
+    path: "/dashboard",
     name: "dashboard",
     meta: {
       auth: false,

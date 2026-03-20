@@ -68,7 +68,7 @@
                   <i class="pi pi-user mr-2"></i>
                   <span>{{ slotProps.data.emp_open_job }}</span>
                 </template>
-                <template v-if="slotProps.data.emp_close_job && slotProps.data.status == 'completed'">
+                <template v-else-if="slotProps.data.emp_close_job && slotProps.data.status == 'completed'">
                   <i class="pi pi-user mr-2"></i>
                   <span>{{ slotProps.data.emp_close_job }}</span>
                 </template>

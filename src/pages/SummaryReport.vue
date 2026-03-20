@@ -13,24 +13,32 @@
         />
         <h1><i class="pi pi-chart-bar mr-2"></i>สรุปผลการดำเนินการ</h1>
       </div>
+      <div class="header-right">
+        <span class="doc-count" v-if="historyList.length > 0">
+          <i class="pi pi-file mr-1"></i>{{ historyList.length }} รายการ
+        </span>
+      </div>
     </div>
 
     <!-- Search Section -->
     <div class="search-section">
-      <div class="flex align-items-end gap-3 flex-wrap">
-        <div class="field">
+      <div class="search-row">
+        <div class="search-field">
           <label>จากวันที่</label>
-          <Calendar v-model="fromDate" dateFormat="dd/mm/yy" :showIcon="true" />
+          <Calendar v-model="fromDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
         </div>
-        <div class="field">
+        <div class="search-field">
           <label>ถึงวันที่</label>
-          <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" />
+          <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
         </div>
-        <div class="field">
+        <div class="search-field search-field-grow">
           <label>ค้นหา</label>
-          <InputText v-model="searchText" placeholder="ค้นหา..." @keyup.enter="fetchDocHistory" />
+          <InputText v-model="searchText" placeholder="ค้นหาเลขที่เอกสาร, ลูกค้า, ทะเบียน..." class="w-full" @keyup.enter="fetchDocHistory" />
         </div>
-        <Button label="ค้นหา" icon="pi pi-search" @click="fetchDocHistory" />
+        <div class="search-field search-field-btn">
+          <label>&nbsp;</label>
+          <Button label="ค้นหา" icon="pi pi-search" @click="fetchDocHistory" class="w-full" />
+        </div>
       </div>
     </div>
 
@@ -53,8 +61,8 @@
       <div class="summary-card card-complete">
         <div class="card-icon"><i class="pi pi-check-circle"></i></div>
         <div class="card-info">
-          <div class="card-value">{{ countByStatus("complete") }}</div>
-          <div class="card-label">ดำเนินการเสร็จ</div>
+          <div class="card-value">{{ countByStatus("completed") }}</div>
+          <div class="card-label">ปิดงาน</div>
         </div>
       </div>
       <div class="summary-card card-closed">
@@ -89,65 +97,64 @@
       >
         <template #empty>
           <div class="text-center p-4">
-            <i class="pi pi-inbox" style="font-size: 2rem; color: #ccc"></i>
+            <i class="pi pi-inbox" style="font-size: 2.5rem; color: #ccc"></i>
             <p class="mt-2" style="color: #999">ไม่พบข้อมูล</p>
           </div>
         </template>
 
-        <Column header="ลำดับ" style="width: 5%; text-align: center">
+        <Column header="ลำดับ" style="width: 60px; text-align: center">
           <template #body="slotProps">
             <div class="text-center">{{ slotProps.index + 1 }}</div>
           </template>
         </Column>
 
-        <Column field="doc_no" header="เลขที่เอกสาร" style="width: 14%">
+        <Column field="doc_no" header="เลขที่เอกสาร" style="min-width: 150px">
           <template #body="slotProps">
-            <span class="font-semibold">{{ slotProps.data.doc_no }}</span>
+            <span class="font-semibold" style="color: #1e40af">{{ slotProps.data.doc_no }}</span>
           </template>
         </Column>
 
-        <Column field="doc_date" header="วันที่" style="width: 10%">
+        <Column field="doc_date" header="วันที่/เวลา" style="min-width: 110px">
           <template #body="slotProps">
-            <span>{{ slotProps.data.doc_date }}</span>
-            <br />
-            <small class="text-color-secondary">{{ slotProps.data.doc_time }}</small>
+            <div>{{ slotProps.data.doc_date }}</div>
+            <small class="text-color-secondary">{{ slotProps.data.doc_time }} น.</small>
           </template>
         </Column>
 
-        <Column field="cust_name" header="ลูกค้า" style="width: 16%">
+        <Column field="cust_name" header="ลูกค้า" style="min-width: 180px">
           <template #body="slotProps">
-            <div>{{ slotProps.data.cust_name }}</div>
+            <div class="font-medium">{{ slotProps.data.cust_name }}</div>
             <small class="text-color-secondary">{{ slotProps.data.cust_code }}</small>
           </template>
         </Column>
 
-        <Column field="car_brand" header="ยี่ห้อรถ" style="width: 10%" />
+        <Column field="car_brand" header="ยี่ห้อรถ" style="min-width: 100px" />
 
-        <Column field="car_code" header="ทะเบียนรถ" style="width: 12%">
+        <Column field="car_code" header="ทะเบียนรถ" style="min-width: 130px">
           <template #body="slotProps">
             <span class="car-plate-tag">{{ slotProps.data.car_code }}</span>
           </template>
         </Column>
 
-        <Column field="emp_open_job" header="ผู้รับงาน" style="width: 10%">
+        <Column field="emp_open_job" header="ผู้รับงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_open_job">
-              <i class="pi pi-user mr-1"></i>{{ slotProps.data.emp_open_job }}
+            <span v-if="slotProps.data.emp_open_job" class="emp-name">
+              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_open_job }}
             </span>
-            <span v-else class="text-color-secondary">-</span>
+            <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
           </template>
         </Column>
 
-        <Column field="emp_close_job" header="ผู้ปิดงาน" style="width: 10%">
+        <Column field="emp_close_job" header="ผู้ปิดงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_close_job">
-              <i class="pi pi-user mr-1"></i>{{ slotProps.data.emp_close_job }}
+            <span v-if="slotProps.data.emp_close_job" class="emp-name">
+              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_close_job }}
             </span>
-            <span v-else class="text-color-secondary">-</span>
+            <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
           </template>
         </Column>
 
-        <Column field="status" header="สถานะ" style="width: 10%">
+        <Column field="status" header="สถานะ" style="min-width: 130px">
           <template #body="slotProps">
             <Tag
               :value="getStatusText(slotProps.data.status)"
@@ -155,11 +162,16 @@
               :icon="getStatusIcon(slotProps.data.status)"
             />
           </template>
+        </Column>        <Column field="remark" header="หมายเหตุ" style="min-width: 120px">
+          <template #body="slotProps">
+            <span class="text-color-secondary">{{ slotProps.data.remark || "—" }}</span>
+          </template>
         </Column>
 
-        <Column field="remark" header="หมายเหตุ" style="width: 10%">
+        <Column field="remark_summary" header="สรุปผล" style="min-width: 150px">
           <template #body="slotProps">
-            <span>{{ slotProps.data.remark || "-" }}</span>
+            <span v-if="slotProps.data.remark_summary" class="remark-summary-text">{{ slotProps.data.remark_summary }}</span>
+            <span v-else class="text-color-secondary">—</span>
           </template>
         </Column>
       </DataTable>
@@ -223,46 +235,31 @@ const countByStatus = (status) => {
 // Status helpers
 const getStatusText = (status) => {
   switch (status) {
-    case "pending":
-      return "รอดำเนินการ";
-    case "in-progress":
-      return "กำลังดำเนินการ";
-    case "complete":
-      return "ดำเนินการเสร็จ";
-    case "closed":
-      return "ปิดงานแล้ว";
-    default:
-      return status;
+    case "pending": return "รอดำเนินการ";
+    case "in-progress": return "กำลังดำเนินการ";
+    case "completed": return "ปิดงาน";
+    case "closed": return "ปิดงานแล้ว";
+    default: return status;
   }
 };
 
 const getStatusSeverity = (status) => {
   switch (status) {
-    case "pending":
-      return "warning";
-    case "in-progress":
-      return "info";
-    case "complete":
-      return "success";
-    case "closed":
-      return null;
-    default:
-      return null;
+    case "pending": return "warning";
+    case "in-progress": return "info";
+    case "completed": return "success";
+    case "closed": return "secondary";
+    default: return "secondary";
   }
 };
 
 const getStatusIcon = (status) => {
   switch (status) {
-    case "pending":
-      return "pi pi-clock";
-    case "in-progress":
-      return "pi pi-spin pi-spinner";
-    case "complete":
-      return "pi pi-check";
-    case "closed":
-      return "pi pi-lock";
-    default:
-      return "";
+    case "pending": return "pi pi-clock";
+    case "in-progress": return "pi pi-spin pi-spinner";
+    case "completed": return "pi pi-check";
+    case "closed": return "pi pi-lock";
+    default: return "";
   }
 };
 </script>
@@ -270,19 +267,20 @@ const getStatusIcon = (status) => {
 <style scoped>
 .summary-report-page {
   min-height: 100vh;
-  background: #f8f9fa;
-  padding: 1.5rem;
+  background: #f0f2f5;
+  padding: 1rem 1.5rem;
 }
 
+/* Header */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   background: #fff;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .header-left {
@@ -292,128 +290,182 @@ const getStatusIcon = (status) => {
 }
 
 .header-left h1 {
-  font-size: 1.5rem;
-  color: #2c3e50;
+  font-size: 1.25rem;
+  color: #1e293b;
   margin: 0;
   font-weight: 700;
 }
 
+.header-right .doc-count {
+  font-size: 0.85rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* Search */
 .search-section {
   background: #fff;
-  padding: 1.2rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 1rem;
 }
 
-.search-section .field {
+.search-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.search-field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.25rem;
+  min-width: 160px;
 }
 
-.search-section label {
-  font-size: 0.85rem;
+.search-field-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-field-btn {
+  min-width: 100px;
+}
+
+.search-field label {
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #555;
+  color: #64748b;
 }
 
+/* Summary Cards */
 .summary-cards {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
 .summary-card {
   flex: 1;
-  min-width: 150px;
+  min-width: 140px;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   background: #fff;
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   border-left: 4px solid transparent;
 }
 
-.card-pending {
-  border-left-color: #f59e0b;
-}
-.card-inprogress {
-  border-left-color: #3b82f6;
-}
-.card-complete {
-  border-left-color: #10b981;
-}
-.card-closed {
-  border-left-color: #6b7280;
-}
-.card-all {
-  border-left-color: #8b5cf6;
-}
+.card-pending { border-left-color: #f59e0b; }
+.card-inprogress { border-left-color: #3b82f6; }
+.card-complete { border-left-color: #10b981; }
+.card-closed { border-left-color: #6b7280; }
+.card-all { border-left-color: #8b5cf6; }
 
-.card-icon {
-  font-size: 1.5rem;
-}
-.card-pending .card-icon {
-  color: #f59e0b;
-}
-.card-inprogress .card-icon {
-  color: #3b82f6;
-}
-.card-complete .card-icon {
-  color: #10b981;
-}
-.card-closed .card-icon {
-  color: #6b7280;
-}
-.card-all .card-icon {
-  color: #8b5cf6;
-}
+.card-icon { font-size: 1.3rem; }
+.card-pending .card-icon { color: #f59e0b; }
+.card-inprogress .card-icon { color: #3b82f6; }
+.card-complete .card-icon { color: #10b981; }
+.card-closed .card-icon { color: #6b7280; }
+.card-all .card-icon { color: #8b5cf6; }
 
 .card-value {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #1e293b;
+  line-height: 1;
 }
 
 .card-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #64748b;
+  margin-top: 2px;
 }
 
+/* Table */
 .table-section {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
 .car-plate-tag {
+  display: inline-block;
   background: #eef2ff;
   color: #4338ca;
-  padding: 0.25rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.emp-name {
   font-size: 0.85rem;
+  color: #334155;
+}
+
+.remark-summary-text {
+  font-size: 0.85rem;
+  color: #0f766e;
+  background: #f0fdfa;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 :deep(.history-table .p-datatable-thead > tr > th) {
-  background: #f1f5f9;
-  color: #334155;
+  background: #f8fafc;
+  color: #475569;
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 :deep(.history-table .p-datatable-tbody > tr > td) {
-  padding: 0.6rem 1rem;
-  font-size: 0.88rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  vertical-align: middle;
 }
 
 :deep(.history-table .p-datatable-tbody > tr:hover) {
   background: #f8fafc !important;
+}
+
+:deep(.history-table .p-paginator) {
+  padding: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Tag severity overrides */
+:deep(.p-tag.p-tag-warning) {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: white;
+}
+
+:deep(.p-tag.p-tag-info) {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: white;
+}
+
+:deep(.p-tag.p-tag-success) {
+  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+  color: white;
+}
+
+:deep(.p-tag.p-tag-secondary) {
+  background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+  color: white;
 }
 </style>
