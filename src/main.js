@@ -54,8 +54,8 @@ import 'primeflex/primeflex.css'
 
 const app = createApp(App)
 
-
-
+const pinia = createPinia()
+app.use(pinia);
 app.use(PrimeVue);
 app.use(router);
 app.use(ToastService);
@@ -100,5 +100,4 @@ app.directive('tooltip', Tooltip);
 app.directive('ripple', Ripple);
 app.directive('styleclass', StyleClass);
 
-app.use(createPinia())
 app.mount('#app')

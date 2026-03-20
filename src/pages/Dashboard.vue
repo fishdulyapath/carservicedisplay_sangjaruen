@@ -1,8 +1,6 @@
 <template>
   <div class="car-service-display">
-    <div
-      class="header p-4 bg-orange-600 text-white flex align-items-center justify-content-between"
-    >
+    <div class="header p-4 bg-orange-600 text-white flex align-items-center justify-content-between">
       <div class="logo">
         <h1>บริการศูนย์รถยนต์</h1>
       </div>
@@ -24,50 +22,31 @@
       <div class="service-status p-3">
         <h2 class="text-xl mb-3 text-orange-600">สถานะการให้บริการ</h2>
 
-        <DataTable
-          :value="visibleServices"
-          :rows="itemsPerPage"
-          class="p-datatable-lg"
-          stripedRows
-          :rowHover="true"
-          responsiveLayout="scroll"
-        >
+        <DataTable :value="visibleServices" :rows="itemsPerPage" class="p-datatable-lg" stripedRows :rowHover="true" responsiveLayout="scroll">
+          <Column field="doc_no" header="เลขที่" style="width: 20%">
+            <template #body="slotProps">
+              <span class="font-bold text-xxl">{{ slotProps.data.doc_no }}</span>
+            </template>
+          </Column>
+          <Column field="cust_name" header="ลูกค้า" style="width: 20%" class="text-xxl">
+            <template #body="slotProps">
+              <span class="text-xxl">{{ slotProps.data.cust_name }}</span>
+            </template>
+          </Column>
           <Column field="car_code" header="ทะเบียนรถ" style="width: 15%">
             <template #body="slotProps">
               <span class="font-bold text-xxl">{{ slotProps.data.car_code }}</span>
             </template>
           </Column>
-          <Column field="car_brand" header="รุ่นรถ" style="width: 15%" class="text-xxl">
+          <Column field="emp_name" header="ผู้ดำเนินการ" style="width: 20%" class="text-xxl">
             <template #body="slotProps">
-              <span class="text-xxl">{{ slotProps.data.car_brand }}</span>
+              <span class="text-xxl">{{ slotProps.data.emp_name }}</span>
             </template>
           </Column>
-          <Column field="job_name" header="บริการ" style="width: 15%" class="text-xxl">
+
+          <Column field="status" header="สถานะ" style="width: 20%" class="text-xxl">
             <template #body="slotProps">
-              <span class="text-xxl">{{ slotProps.data.job_name }}</span>
-            </template>
-          </Column>
-          <Column field="cust_name" header="ลูกค้า" style="width: 15%" class="text-xxl">
-            <template #body="slotProps">
-              <span class="text-xxl">{{ slotProps.data.cust_name }}</span>
-            </template>
-          </Column>
-          <Column field="status" header="สถานะ" style="width: 15%" class="text-xxl">
-            <template #body="slotProps">
-              <Tag
-                class="text-xxl"
-                :value="slotProps.data.status_name"
-                :severity="getStatusSeverity(slotProps.data.status)"
-              />
-            </template>
-          </Column>
-          <Column field="progress" header="ความคืบหน้า" style="width: 25%" class="text-xxl">
-            <template #body="slotProps">
-              <ProgressBar 
-                :value="calculateProgress(slotProps.data)" 
-                :class="getProgressClass(slotProps.data.status)"
-              />
-            
+              <Tag class="text-xxl" :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" />
             </template>
           </Column>
         </DataTable>
@@ -131,28 +110,28 @@ const allServices = ref([]);
 const calculateProgress = (service) => {
   // ตั้งค่าค่าเริ่มต้น countdown เป็น 90 นาที หากไม่มีการระบุ
   const countdown = service.countdown !== undefined ? service.countdown : 3;
-  
+
   // เงื่อนไขที่ 1: ถ้าสถานะเป็น "รอดำเนินการ" (status = "0") ให้แสดง 25%
   if (service.status === "0") {
     return 10;
   }
-  
+
   // เงื่อนไขที่ 3: ถ้าสถานะเป็น "เสร็จ" (status = "2") ให้แสดง 100%
   if (service.status === "2") {
     return 100;
   }
-  
+
   // เงื่อนไขที่ 2: กำลังดำเนินการ (status = "1") ให้คำนวณจาก countdown
   if (service.status === "1") {
     // คำนวณเวลาที่ผ่านไป (นาที)
     const now = new Date();
     let startTime;
-    
+
     // ตรวจสอบรูปแบบของ start_time
     if (service.start_time) {
-      if (typeof service.start_time === 'string' && service.start_time.includes(':')) {
+      if (typeof service.start_time === "string" && service.start_time.includes(":")) {
         // กรณี start_time เป็นรูปแบบ 'HH:MM' (เช่น '14:30')
-        const [hours, minutes] = service.start_time.split(':').map(Number);
+        const [hours, minutes] = service.start_time.split(":").map(Number);
         startTime = new Date();
         startTime.setHours(hours, minutes, 0, 0);
       } else {
@@ -163,23 +142,23 @@ const calculateProgress = (service) => {
       // กรณีไม่มี start_time ให้ใช้เวลาปัจจุบัน
       startTime = now;
     }
-    
+
     // ตรวจสอบความถูกต้องของ startTime
     if (isNaN(startTime.getTime())) {
-      console.error('Invalid start_time:', service.start_time);
+      console.error("Invalid start_time:", service.start_time);
       startTime = now;
     }
-    
+
     // คำนวณเวลาที่ผ่านไป (นาที)
     const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
-    
+
     // คำนวณเปอร์เซ็นต์ของเวลาที่ผ่านไป
     let percentComplete = Math.floor(25 + (elapsedMinutes / countdown) * 50);
-    
+
     // จำกัดค่าไม่ให้เกิน 75%
     return Math.min(percentComplete, 75);
   }
-  
+
   // กรณีอื่นๆ ให้แสดง 0%
   return 0;
 };
@@ -205,20 +184,20 @@ const processServiceData = async () => {
     const res = await MasterdataService.getDisplayMain(doc_date);
     if (res.success) {
       // เพิ่ม countdown และ start_time ถ้าไม่มี
-      allServices.value = res.data.map(service => {
+      allServices.value = res.data.map((service) => {
         // ตั้งค่า countdown เป็น 90 นาทีหากไม่มีการระบุ
         if (service.countdown === undefined) {
           service.countdown = 90;
         }
-        
+
         // ตรวจสอบสถานะและ start_time
         if (service.status === "1" && !service.start_time) {
           // ถ้าไม่มี start_time แต่สถานะเป็นกำลังดำเนินการ ให้ตั้งค่าเวลาปัจจุบัน
           const now = new Date();
           // เก็บเวลาในรูปแบบ 'HH:MM'
-          service.start_time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          service.start_time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
         }
-        
+
         return service;
       });
     }
@@ -234,21 +213,18 @@ const currentIndex = ref(0);
 const itemsPerPage = 10;
 const visibleServices = ref([]);
 
-  // อัพเดตข้อมูลทุก 30 วินาที และเลื่อนหน้าทุก 30 วินาที
+// อัพเดตข้อมูลทุก 30 วินาที และเลื่อนหน้าทุก 30 วินาที
 const updateServices = async () => {
   const services = await processServiceData();
   const totalPages = Math.ceil(services.length / itemsPerPage);
 
   // แสดงข้อมูลที่คำนวณใหม่ทุกครั้ง
-  visibleServices.value = services.slice(
-    currentIndex.value * itemsPerPage,
-    (currentIndex.value + 1) * itemsPerPage
-  ).map(service => {
+  visibleServices.value = services.slice(currentIndex.value * itemsPerPage, (currentIndex.value + 1) * itemsPerPage).map((service) => {
     // คำนวณค่า progress สำหรับแต่ละรายการ
     const progress = calculateProgress(service);
     return {
       ...service,
-      progress: progress
+      progress: progress,
     };
   });
 
@@ -275,14 +251,27 @@ const updateCurrentTime = () => {
 // ฟังก์ชันช่วยในการกำหนดสี Tag ตามสถานะ
 const getStatusSeverity = (status) => {
   switch (status) {
-    case "0":
+    case "pending":
       return "secondary";
-    case "1":
+    case "in-progress":
       return "warning";
-    case "2":
+    case "completed":
       return "success";
     default:
       return "secondary";
+  }
+};
+
+const getStatusText = (status) => {
+  switch (status) {
+    case "pending":
+      return "รอดำเนินการ";
+    case "in-progress":
+      return "กำลังดำเนินการ";
+    case "completed":
+      return "เสร็จแล้ว";
+    default:
+      return "ไม่ทราบสถานะ";
   }
 };
 
@@ -305,16 +294,16 @@ onMounted(() => {
   pageRotationInterval = setInterval(() => {
     updateServices();
   }, 5000);
-  
+
   // อัพเดต progress bar ทุก 1 นาที
   progressUpdateInterval = setInterval(() => {
     // คำนวณความคืบหน้าใหม่สำหรับทุกรายการ
-    visibleServices.value = visibleServices.value.map(service => {
+    visibleServices.value = visibleServices.value.map((service) => {
       // คำนวณค่า progress ใหม่
       const progress = calculateProgress(service);
       return {
         ...service,
-        progress: progress
+        progress: progress,
       };
     });
   }, 30000);
@@ -455,7 +444,7 @@ onUnmounted(() => {
   .text-xxl {
     font-size: 36px !important;
   }
-  
+
   :deep(.p-progressbar) {
     height: 30px;
   }
