@@ -26,10 +26,19 @@
         <div class="search-field">
           <label>จากวันที่</label>
           <Calendar v-model="fromDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
-        </div>
-        <div class="search-field">
+        </div>        <div class="search-field">
           <label>ถึงวันที่</label>
           <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
+        </div>
+        <div class="search-field">
+          <label>สถานะ</label>
+          <Dropdown
+            v-model="filterStatus"
+            :options="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
         </div>
         <div class="search-field search-field-grow">
           <label>ค้นหา</label>
@@ -67,6 +76,43 @@
         <Column header="ลำดับ" style="width: 60px; text-align: center">
           <template #body="slotProps">
             <div class="text-center">{{ slotProps.index + 1 }}</div>
+          </template>
+        </Column>
+            <Column field="status" header="สถานะ" style="min-width: 130px">
+          <template #body="slotProps">
+            <Tag
+              :value="getStatusText(slotProps.data.status)"
+              :severity="getStatusSeverity(slotProps.data.status)"
+              :icon="getStatusIcon(slotProps.data.status)"
+            />
+          </template>
+        </Column>
+
+        <Column header="ดำเนินการ" style="min-width: 120px; text-align: center" frozen alignFrozen="right">
+          <template #body="slotProps">            <div class="flex justify-content-center">
+              <Button
+                v-if="slotProps.data.status === 'pending'"
+                label="รับงาน"
+                icon="pi pi-play"
+                class="p-button-sm p-button-info action-btn"
+                @click="openEmployeeDialog(slotProps.data, 'getjob')"
+              />
+              <Button
+                v-else-if="slotProps.data.status === 'in-progress'"
+                label="ปิดงาน"
+                icon="pi pi-stop-circle"
+                class="p-button-sm p-button-warning action-btn"
+                @click="openEmployeeDialog(slotProps.data, 'complete')"
+              />
+              <Button
+                v-else-if="slotProps.data.status === 'completed'"
+                label="เสร็จงาน"
+                icon="pi pi-check-circle"
+                class="p-button-sm p-button-success action-btn"
+                @click="confirmCloseJob(slotProps.data)"
+              />
+              <Tag v-else value="ปิดงานแล้ว" severity="info" icon="pi pi-lock" />
+            </div>
           </template>
         </Column>
 
@@ -116,43 +162,7 @@
           </template>
         </Column>
 
-        <Column field="status" header="สถานะ" style="min-width: 130px">
-          <template #body="slotProps">
-            <Tag
-              :value="getStatusText(slotProps.data.status)"
-              :severity="getStatusSeverity(slotProps.data.status)"
-              :icon="getStatusIcon(slotProps.data.status)"
-            />
-          </template>
-        </Column>
-
-        <Column header="ดำเนินการ" style="min-width: 120px; text-align: center" frozen alignFrozen="right">
-          <template #body="slotProps">            <div class="flex justify-content-center">
-              <Button
-                v-if="slotProps.data.status === 'pending'"
-                label="รับงาน"
-                icon="pi pi-play"
-                class="p-button-sm p-button-info action-btn"
-                @click="openEmployeeDialog(slotProps.data, 'getjob')"
-              />
-              <Button
-                v-else-if="slotProps.data.status === 'in-progress'"
-                label="ปิดงาน"
-                icon="pi pi-stop-circle"
-                class="p-button-sm p-button-warning action-btn"
-                @click="openEmployeeDialog(slotProps.data, 'complete')"
-              />
-              <Button
-                v-else-if="slotProps.data.status === 'completed'"
-                label="เสร็จงาน"
-                icon="pi pi-check-circle"
-                class="p-button-sm p-button-success action-btn"
-                @click="confirmCloseJob(slotProps.data)"
-              />
-              <Tag v-else value="ปิดงานแล้ว" severity="info" icon="pi pi-lock" />
-            </div>
-          </template>
-        </Column>
+    
       </DataTable>
     </div>
 
@@ -333,8 +343,16 @@ const toast = useToast();
 const fromDate = ref(null);
 const toDate = ref(null);
 const searchText = ref("");
+const filterStatus = ref("");
 const loading = ref(false);
 const saving = ref(false);
+
+const statusOptions = [
+  { label: "ทุกสถานะ", value: "" },
+  { label: "รอดำเนินการ", value: "pending" },
+  { label: "กำลังดำเนินการ", value: "in-progress" },
+  { label: "ปิดงาน", value: "completed" },
+];
 
 // Data
 const docList = ref([]);
@@ -367,8 +385,8 @@ const currentUserCode = computed(() => {
 // Init dates
 onMounted(() => {
   const now = new Date();
-  fromDate.value = new Date(now.getFullYear(), now.getMonth(), 1);
-  toDate.value = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  fromDate.value = now;
+  toDate.value = now;
   fetchDocList();
   fetchEmployees();
 });
@@ -376,10 +394,9 @@ onMounted(() => {
 // Fetch document list
 const fetchDocList = async () => {
   loading.value = true;
-  try {
-    const from = Utils.getDateFormatPG(fromDate.value);
+  try {    const from = Utils.getDateFormatPG(fromDate.value);
     const to = Utils.getDateFormatPG(toDate.value);
-    const res = await MasterdataService.getDocList(from, to, searchText.value);
+    const res = await MasterdataService.getDocList(from, to, searchText.value, filterStatus.value);
     if (res.success) {
       docList.value = res.data || [];
     } else {

@@ -5,8 +5,18 @@
       <div class="header-inner">
         <div class="logo flex align-items-center gap-3">
           <h1>สถานะการจัดส่ง</h1>
-        </div>
-        <div class="right-section flex align-items-center gap-3">
+        </div>        <div class="right-section flex align-items-center gap-3">
+          <div class="date-picker-section">
+            <i class="pi pi-calendar"></i>
+            <Calendar
+              v-model="selectedDate"
+              dateFormat="dd/mm/yy"
+              :showIcon="false"
+              :manualInput="false"
+              class="header-calendar"
+              @date-select="onDateChange"
+            />
+          </div>
           <Button
             icon="pi pi-desktop"
             class="fullscreen-btn p-button-rounded p-button-text p-button-lg"
@@ -38,6 +48,16 @@
             <template #body="slotProps">
               <div class="doc-no-cell">
                 <span class="doc-no-text">{{ slotProps.data.doc_no }}</span>
+              </div>
+            </template>
+          </Column>
+
+
+          <Column field="doc_date" header="วันที่/เวลา" style="width: 18%">
+            <template #body="slotProps">
+              <div class="doc-date-cell">
+                <span class="doc-date-text">{{ slotProps.data.doc_date }}</span>
+                <small class="doc-time-text">{{ slotProps.data.doc_time }} น.</small>
               </div>
             </template>
           </Column>
@@ -82,6 +102,15 @@
               <Tag class="status-tag" :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" :icon="getStatusIcon(slotProps.data.status)" />
             </template>
           </Column>
+
+          <Column field="remark" header="หมายเหตุ" style="width: 22%">
+            <template #body="slotProps">
+              <div class="remark-cell">
+                <span>{{ slotProps.data.remark }}</span>
+              </div>
+            </template>
+          </Column>
+
         </DataTable>
 
         <!-- Empty state -->
@@ -100,16 +129,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 
 // Components from PrimeVue
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import Tag from "primevue/tag";
 import Button from "primevue/button";
+import Calendar from "primevue/calendar";
 import Tooltip from "primevue/tooltip";
 import MasterdataService from "@/services/MasterdataService";
 import Utils from "@/utils/";
+
+// วันที่ที่เลือก
+const selectedDate = ref(new Date());
+
+// เมื่อเปลี่ยนวันที่
+const onDateChange = () => {
+  currentIndex.value = 0;
+  fetchServiceData();
+};
 
 // ตัวแปรสำหรับจัดการโหมดเต็มจอ
 const isFullScreen = ref(false);
@@ -222,7 +261,7 @@ const getProgressClass = (status) => {
 
 // ไม่ต้องคำนวณเวลาที่เหลือแล้ว เนื่องจากไม่มีการแสดงเวลาแล้ว
 const processServiceData = async () => {
-  var doc_date = Utils.getDateFormatPG(new Date());
+  var doc_date = Utils.getDateFormatPG(selectedDate.value);
   try {
     const res = await MasterdataService.getDisplayMain(doc_date);
     if (res.success) {
@@ -448,6 +487,45 @@ onUnmounted(() => {
   background-color: rgba(255, 255, 255, 0.15) !important;
 }
 
+/* Date Picker in Header */
+.date-picker-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2rem;
+  padding: 0.3rem 0.5rem 0.3rem 1rem;
+  backdrop-filter: blur(4px);
+  color: white;
+}
+
+.date-picker-section > i {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+:deep(.header-calendar .p-inputtext) {
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  width: 140px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+:deep(.header-calendar .p-inputtext::placeholder) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:deep(.header-calendar .p-inputtext:focus) {
+  box-shadow: none !important;
+}
+
 /* ===== Content ===== */
 .content-container {
   flex: 1;
@@ -533,6 +611,23 @@ onUnmounted(() => {
   font-weight: 700;
   font-size: 1.2rem;
   box-shadow: 0 2px 8px rgba(232, 76, 16, 0.3);
+}
+
+/* Document Date/Time */
+.doc-date-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.doc-date-text {
+  font-weight: 600;
+  color: #333;
+}
+
+.doc-time-text {
+  color: #888;
+  margin-top: 2px;
 }
 
 /* Document Number */

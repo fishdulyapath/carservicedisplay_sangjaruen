@@ -26,18 +26,16 @@ export default {
       .get(`/updateCarDoc?dbname=data2&provider=DATA&docno=${doc_no}&status=${status}&doctime=${doctime}`)
       .then((res) => res.data);
   },
-
   // Document list (จัดการสถานะ)
-  getDocList(from_date, to_date, search = "") {
+  getDocList(from_date, to_date, search = "", status = "") {
     return instanceApi(true)
-      .get(`/getDocList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}`)
+      .get(`/getDocList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}&status=${status}`)
       .then((res) => res.data);
   },
-
   // Document history list (สรุปผลการดำเนินการ)
-  getDocHistoryList(from_date, to_date, search = "") {
+  getDocHistoryList(from_date, to_date, search = "", status = "") {
     return instanceApi(true)
-      .get(`/getDocHistoryList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}`)
+      .get(`/getDocHistoryList?dbname=data2&provider=DATA&from_date=${from_date}&to_date=${to_date}&search=${search}&status=${status}`)
       .then((res) => res.data);
   },
 

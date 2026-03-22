@@ -5,18 +5,11 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <Button
-          icon="pi pi-arrow-left"
-          class="p-button-text p-button-rounded"
-          @click="router.push({ name: 'mainmenu' })"
-          v-tooltip.bottom="'กลับเมนูหลัก'"
-        />
+        <Button icon="pi pi-arrow-left" class="p-button-text p-button-rounded" @click="router.push({ name: 'mainmenu' })" v-tooltip.bottom="'กลับเมนูหลัก'" />
         <h1><i class="pi pi-chart-bar mr-2"></i>สรุปผลการดำเนินการ</h1>
       </div>
       <div class="header-right">
-        <span class="doc-count" v-if="historyList.length > 0">
-          <i class="pi pi-file mr-1"></i>{{ historyList.length }} รายการ
-        </span>
+        <span class="doc-count" v-if="historyList.length > 0"> <i class="pi pi-file mr-1"></i>{{ historyList.length }} รายการ </span>
       </div>
     </div>
 
@@ -30,6 +23,15 @@
         <div class="search-field">
           <label>ถึงวันที่</label>
           <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
+        </div>        <div class="search-field">
+          <label>สถานะ</label>
+          <Dropdown
+            v-model="filterStatus"
+            :options="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
         </div>
         <div class="search-field search-field-grow">
           <label>ค้นหา</label>
@@ -108,6 +110,17 @@
           </template>
         </Column>
 
+        <Column field="status" header="สถานะ" style="min-width: 130px">
+          <template #body="slotProps">
+            <Tag :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" :icon="getStatusIcon(slotProps.data.status)" />
+          </template>
+        </Column>
+        <Column field="remark" header="หมายเหตุ" style="min-width: 120px">
+          <template #body="slotProps">
+            <span class="text-color-secondary">{{ slotProps.data.remark || "—" }}</span>
+          </template>
+        </Column>
+
         <Column field="doc_no" header="เลขที่เอกสาร" style="min-width: 150px">
           <template #body="slotProps">
             <span class="font-semibold" style="color: #1e40af">{{ slotProps.data.doc_no }}</span>
@@ -138,33 +151,15 @@
 
         <Column field="emp_open_job" header="ผู้รับงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_open_job" class="emp-name">
-              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_open_job }}
-            </span>
+            <span v-if="slotProps.data.emp_open_job" class="emp-name"> <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_open_job }} </span>
             <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
           </template>
         </Column>
 
         <Column field="emp_close_job" header="ผู้ปิดงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_close_job" class="emp-name">
-              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_close_job }}
-            </span>
+            <span v-if="slotProps.data.emp_close_job" class="emp-name"> <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_close_job }} </span>
             <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
-          </template>
-        </Column>
-
-        <Column field="status" header="สถานะ" style="min-width: 130px">
-          <template #body="slotProps">
-            <Tag
-              :value="getStatusText(slotProps.data.status)"
-              :severity="getStatusSeverity(slotProps.data.status)"
-              :icon="getStatusIcon(slotProps.data.status)"
-            />
-          </template>
-        </Column>        <Column field="remark" header="หมายเหตุ" style="min-width: 120px">
-          <template #body="slotProps">
-            <span class="text-color-secondary">{{ slotProps.data.remark || "—" }}</span>
           </template>
         </Column>
 
@@ -194,7 +189,17 @@ const toast = useToast();
 const fromDate = ref(null);
 const toDate = ref(null);
 const searchText = ref("");
+const filterStatus = ref("");
 const loading = ref(false);
+
+// Status filter options
+const statusOptions = [
+  { label: "ทุกสถานะ", value: "" },
+  { label: "รอดำเนินการ", value: "pending" },
+  { label: "กำลังดำเนินการ", value: "in-progress" },
+  { label: "ปิดงาน", value: "completed" },
+  { label: "จบงาน", value: "close" },
+];
 
 // Data
 const historyList = ref([]);
@@ -202,8 +207,8 @@ const historyList = ref([]);
 // Init dates
 onMounted(() => {
   const now = new Date();
-  fromDate.value = new Date(now.getFullYear(), now.getMonth(), 1);
-  toDate.value = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  fromDate.value = now;
+  toDate.value = now;
   fetchDocHistory();
 });
 
@@ -213,7 +218,7 @@ const fetchDocHistory = async () => {
   try {
     const from = Utils.getDateFormatPG(fromDate.value);
     const to = Utils.getDateFormatPG(toDate.value);
-    const res = await MasterdataService.getDocHistoryList(from, to, searchText.value);
+    const res = await MasterdataService.getDocHistoryList(from, to, searchText.value, filterStatus.value);
     if (res.success) {
       historyList.value = res.data || [];
     } else {
@@ -235,31 +240,46 @@ const countByStatus = (status) => {
 // Status helpers
 const getStatusText = (status) => {
   switch (status) {
-    case "pending": return "รอดำเนินการ";
-    case "in-progress": return "กำลังดำเนินการ";
-    case "completed": return "ปิดงาน";
-    case "closed": return "ปิดงานแล้ว";
-    default: return status;
+    case "pending":
+      return "รอดำเนินการ";
+    case "in-progress":
+      return "กำลังดำเนินการ";
+    case "completed":
+      return "ปิดงาน";
+    case "closed":
+      return "ปิดงานแล้ว";
+    default:
+      return status;
   }
 };
 
 const getStatusSeverity = (status) => {
   switch (status) {
-    case "pending": return "warning";
-    case "in-progress": return "info";
-    case "completed": return "success";
-    case "closed": return "secondary";
-    default: return "secondary";
+    case "pending":
+      return "warning";
+    case "in-progress":
+      return "info";
+    case "completed":
+      return "success";
+    case "closed":
+      return "secondary";
+    default:
+      return "secondary";
   }
 };
 
 const getStatusIcon = (status) => {
   switch (status) {
-    case "pending": return "pi pi-clock";
-    case "in-progress": return "pi pi-spin pi-spinner";
-    case "completed": return "pi pi-check";
-    case "closed": return "pi pi-lock";
-    default: return "";
+    case "pending":
+      return "pi pi-clock";
+    case "in-progress":
+      return "pi pi-spin pi-spinner";
+    case "completed":
+      return "pi pi-check";
+    case "closed":
+      return "pi pi-lock";
+    default:
+      return "";
   }
 };
 </script>
@@ -364,18 +384,40 @@ const getStatusIcon = (status) => {
   border-left: 4px solid transparent;
 }
 
-.card-pending { border-left-color: #f59e0b; }
-.card-inprogress { border-left-color: #3b82f6; }
-.card-complete { border-left-color: #10b981; }
-.card-closed { border-left-color: #6b7280; }
-.card-all { border-left-color: #8b5cf6; }
+.card-pending {
+  border-left-color: #f59e0b;
+}
+.card-inprogress {
+  border-left-color: #3b82f6;
+}
+.card-complete {
+  border-left-color: #10b981;
+}
+.card-closed {
+  border-left-color: #6b7280;
+}
+.card-all {
+  border-left-color: #8b5cf6;
+}
 
-.card-icon { font-size: 1.3rem; }
-.card-pending .card-icon { color: #f59e0b; }
-.card-inprogress .card-icon { color: #3b82f6; }
-.card-complete .card-icon { color: #10b981; }
-.card-closed .card-icon { color: #6b7280; }
-.card-all .card-icon { color: #8b5cf6; }
+.card-icon {
+  font-size: 1.3rem;
+}
+.card-pending .card-icon {
+  color: #f59e0b;
+}
+.card-inprogress .card-icon {
+  color: #3b82f6;
+}
+.card-complete .card-icon {
+  color: #10b981;
+}
+.card-closed .card-icon {
+  color: #6b7280;
+}
+.card-all .card-icon {
+  color: #8b5cf6;
+}
 
 .card-value {
   font-size: 1.3rem;
