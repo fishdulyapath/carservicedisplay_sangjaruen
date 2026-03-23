@@ -84,8 +84,7 @@
     </div>
 
     <!-- Data Table -->
-    <div class="table-section">
-      <DataTable
+    <div class="table-section">      <DataTable
         :value="historyList"
         :loading="loading"
         stripedRows
@@ -96,6 +95,9 @@
         :rows="15"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
         :rowsPerPageOptions="[10, 15, 25, 50]"
+        v-model:expandedRows="expandedRows"
+        @rowExpand="onRowExpand"
+        dataKey="doc_no"
       >
         <template #empty>
           <div class="text-center p-4">
@@ -103,6 +105,53 @@
             <p class="mt-2" style="color: #999">ไม่พบข้อมูล</p>
           </div>
         </template>
+
+        <template #expansion="slotProps">
+          <div class="expansion-content">
+            <div class="expansion-header">
+              <i class="pi pi-box mr-2"></i>
+              <span class="font-bold">รายละเอียดสินค้า — {{ slotProps.data.doc_no }}</span>
+            </div>
+            <div v-if="loadingDetail[slotProps.data.doc_no]" class="text-center p-3">
+              <i class="pi pi-spin pi-spinner" style="font-size: 1.5rem; color: #6366f1"></i>
+              <p class="mt-2" style="color: #999; font-size: 0.85rem">กำลังโหลดข้อมูล...</p>
+            </div>
+            <DataTable v-else :value="docDetails[slotProps.data.doc_no] || []" class="detail-table" responsiveLayout="scroll">
+              <template #empty>
+                <div class="text-center p-3" style="color: #999; font-size: 0.85rem">ไม่พบรายละเอียดสินค้า</div>
+              </template>
+              <Column header="ลำดับ" style="width: 60px; text-align: center">
+                <template #body="sp">
+                  <div class="text-center">{{ sp.index + 1 }}</div>
+                </template>
+              </Column>
+              <Column field="item_code" header="รหัสสินค้า" style="min-width: 120px">
+                <template #body="sp">
+                  <span class="font-semibold" style="color: #6366f1">{{ sp.data.item_code }}</span>
+                </template>
+              </Column>
+              <Column field="item_name" header="ชื่อสินค้า" style="min-width: 250px" />
+              <Column field="qty" header="จำนวน" style="min-width: 100px; text-align: right">
+                <template #body="sp">
+                  <div class="text-right">{{ formatNumber(sp.data.qty) }}</div>
+                </template>
+              </Column>
+              <Column field="unit_name" header="หน่วย" style="min-width: 80px" />
+              <Column field="price" header="ราคา" style="min-width: 120px; text-align: right">
+                <template #body="sp">
+                  <div class="text-right">{{ formatNumber(sp.data.price) }}</div>
+                </template>
+              </Column>
+              <Column field="sum_amount" header="รวม" style="min-width: 120px; text-align: right">
+                <template #body="sp">
+                  <div class="text-right font-bold" style="color: #0f766e">{{ formatNumber(sp.data.sum_amount) }}</div>
+                </template>
+              </Column>
+            </DataTable>
+          </div>
+        </template>
+
+        <Column :expander="true" style="width: 3rem" />
 
         <Column header="ลำดับ" style="width: 60px; text-align: center">
           <template #body="slotProps">
@@ -203,6 +252,9 @@ const statusOptions = [
 
 // Data
 const historyList = ref([]);
+const expandedRows = ref([]);
+const docDetails = ref({});
+const loadingDetail = ref({});
 
 // Init dates
 onMounted(() => {
@@ -235,6 +287,34 @@ const fetchDocHistory = async () => {
 // Count by status
 const countByStatus = (status) => {
   return historyList.value.filter((d) => d.status === status).length;
+};
+
+// Row expand — fetch doc detail
+const onRowExpand = async (event) => {
+  const docNo = event.data.doc_no;
+  if (docDetails.value[docNo]) return; // already loaded
+
+  loadingDetail.value[docNo] = true;
+  try {
+    const res = await MasterdataService.getCarDocDetail(docNo);
+    if (res.success) {
+      docDetails.value[docNo] = res.data || [];
+    } else {
+      docDetails.value[docNo] = [];
+    }
+  } catch (err) {
+    console.error(err);
+    docDetails.value[docNo] = [];
+  } finally {
+    loadingDetail.value[docNo] = false;
+  }
+};
+
+// Format number to 2 decimal places
+const formatNumber = (val) => {
+  const num = parseFloat(val);
+  if (isNaN(num)) return "0.00";
+  return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Status helpers
@@ -488,6 +568,57 @@ const getStatusIcon = (status) => {
 :deep(.history-table .p-paginator) {
   padding: 0.5rem;
   border-top: 1px solid #f1f5f9;
+}
+
+/* Expansion */
+.expansion-content {
+  padding: 0.75rem 1rem;
+  background: #fafbfe;
+  border-left: 3px solid #6366f1;
+  margin: 0.25rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.expansion-header {
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.expansion-header i {
+  color: #6366f1;
+}
+
+:deep(.detail-table .p-datatable-thead > tr > th) {
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 2px solid #c7d2fe;
+  white-space: nowrap;
+}
+
+:deep(.detail-table .p-datatable-tbody > tr > td) {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+:deep(.detail-table .p-datatable-tbody > tr:hover) {
+  background: #eef2ff !important;
+}
+
+:deep(.history-table .p-row-toggler) {
+  color: #6366f1 !important;
+  width: 2rem;
+  height: 2rem;
+}
+
+:deep(.history-table .p-row-toggler:hover) {
+  background: #eef2ff !important;
 }
 
 /* Tag severity overrides */
