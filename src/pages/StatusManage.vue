@@ -343,19 +343,11 @@
         <template v-if="printDetails && printDetails.length > 0">
           <div class="slip-item" v-for="(item, idx) in printDetails" :key="idx">
             <div class="slip-item-name">{{ idx + 1 }}. [{{ item.item_code }}] {{ item.item_name }}</div>
-            <div class="slip-item-detail">
-              <span>{{ formatNumber(item.qty) }} {{ item.unit_name }} x {{ formatNumber(item.price) }}</span>
-              <strong>{{ formatNumber(item.sum_amount) }}</strong>
-            </div>
+            <div class="slip-item-qty"><strong>{{ formatNumber(item.qty) }} {{ item.unit_name }}</strong></div>
           </div>
         </template>
         <div v-else class="slip-empty">-- ไม่พบรายละเอียด --</div>
 
-        <div class="slip-divider-dash"></div>
-        <div class="slip-total-row">
-          <span>รวมทั้งสิ้น</span>
-          <strong>{{ formatNumber(printDetails.reduce((s, i) => s + parseFloat(i.sum_amount || 0), 0)) }}</strong>
-        </div>
         <div class="slip-divider-dash"></div>
 
       </div>
@@ -1169,11 +1161,10 @@ const doCloseJob = async () => {
   font-weight: 500;
 }
 
-.slip-item-detail {
-  display: flex;
-  justify-content: space-between;
-  padding-left: 8px;
+.slip-item-qty {
+  text-align: right;
   color: #333;
+  font-size: 9.5pt;
 }
 
 .slip-empty {
