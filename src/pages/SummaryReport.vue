@@ -23,15 +23,10 @@
         <div class="search-field">
           <label>ถึงวันที่</label>
           <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
-        </div>        <div class="search-field">
+        </div>
+        <div class="search-field">
           <label>สถานะ</label>
-          <Dropdown
-            v-model="filterStatus"
-            :options="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            class="w-full"
-          />
+          <Dropdown v-model="filterStatus" :options="statusOptions" optionLabel="label" optionValue="value" class="w-full" />
         </div>
         <div class="search-field search-field-grow">
           <label>ค้นหา</label>
@@ -84,7 +79,8 @@
     </div>
 
     <!-- Data Table -->
-    <div class="table-section">      <DataTable
+    <div class="table-section">
+      <DataTable
         :value="historyList"
         :loading="loading"
         stripedRows
@@ -164,9 +160,10 @@
             <Tag :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" :icon="getStatusIcon(slotProps.data.status)" />
           </template>
         </Column>
-        <Column field="remark" header="หมายเหตุ" style="min-width: 120px">
+
+        <Column header="พิมพ์" style="width: 60px; text-align: center" frozen alignFrozen="right">
           <template #body="slotProps">
-            <span class="text-color-secondary">{{ slotProps.data.remark || "—" }}</span>
+            <Button icon="pi pi-print" class="p-button-sm p-button-rounded p-button-text print-btn" v-tooltip.top="'พิมพ์เอกสาร'" @click="printDoc(slotProps.data)" />
           </template>
         </Column>
 
@@ -218,7 +215,58 @@
             <span v-else class="text-color-secondary">—</span>
           </template>
         </Column>
+        <Column field="remark" header="หมายเหตุ" style="min-width: 120px">
+          <template #body="slotProps">
+            <span class="text-color-secondary">{{ slotProps.data.remark || "—" }}</span>
+          </template>
+        </Column>
       </DataTable>
+    </div>
+
+    <!-- Print Area (hidden, shown only on print) -->
+    <div id="print-area">
+      <div class="slip-doc" v-if="printData">
+        <div class="slip-shop-name">ใบงานจัดรถ</div>
+        <div class="slip-divider-dash"></div>
+
+        <div class="slip-row">
+          <span class="slip-label">เลขที่ :</span><strong>{{ printData.doc_no }}</strong>
+        </div>
+        <div class="slip-row"><span class="slip-label">วันที่ :</span>{{ printData.doc_date }} {{ printData.doc_time }} น.</div>
+        <div class="slip-divider-dot"></div>
+        <div class="slip-row"><span class="slip-label">ลูกค้า :</span>{{ printData.cust_name }}</div>
+        <div class="slip-row" v-if="printData.cust_code"><span class="slip-label">รหัส :</span>{{ printData.cust_code }}</div>
+        <div class="slip-row"><span class="slip-label">ยี่ห้อ :</span>{{ printData.car_brand }}</div>
+        <div class="slip-row">
+          <span class="slip-label">ทะเบียน :</span><strong>{{ printData.car_code }}</strong>
+        </div>
+        <div class="slip-row"><span class="slip-label">สถานะ :</span>{{ getStatusText(printData.status) }}</div>
+        <div class="slip-row" v-if="printData.emp_open_job"><span class="slip-label">ผู้รับงาน :</span>{{ printData.emp_open_job }}</div>
+        <div class="slip-row" v-if="printData.emp_close_job"><span class="slip-label">ผู้ปิดงาน :</span>{{ printData.emp_close_job }}</div>
+        <div class="slip-row" v-if="printData.remark_summary"><span class="slip-label">สรุปผล :</span>{{ printData.remark_summary }}</div>
+
+        <div class="slip-divider-dash"></div>
+        <div class="slip-section-title">รายละเอียดรายการ</div>
+        <div class="slip-divider-dot"></div>
+
+        <template v-if="printDetails && printDetails.length > 0">
+          <div class="slip-item" v-for="(item, idx) in printDetails" :key="idx">
+            <div class="slip-item-name">{{ idx + 1 }}. [{{ item.item_code }}] {{ item.item_name }}</div>
+            <div class="slip-item-detail">
+              <span>{{ formatNumber(item.qty) }} {{ item.unit_name }} x {{ formatNumber(item.price) }}</span>
+              <strong>{{ formatNumber(item.sum_amount) }}</strong>
+            </div>
+          </div>
+        </template>
+        <div v-else class="slip-empty">-- ไม่พบรายละเอียด --</div>
+
+        <div class="slip-divider-dash"></div>
+        <div class="slip-total-row">
+          <span>รวมทั้งสิ้น</span>
+          <strong>{{ formatNumber(printDetails.reduce((s, i) => s + parseFloat(i.sum_amount || 0), 0)) }}</strong>
+        </div>
+        <div class="slip-divider-dash"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -308,6 +356,26 @@ const onRowExpand = async (event) => {
   } finally {
     loadingDetail.value[docNo] = false;
   }
+};
+
+// Print
+const printData = ref(null);
+const printDetails = ref([]);
+
+const printDoc = async (doc) => {
+  printData.value = doc;
+  if (!docDetails.value[doc.doc_no]) {
+    try {
+      const res = await MasterdataService.getCarDocDetail(doc.doc_no);
+      if (res.success) docDetails.value[doc.doc_no] = res.data || [];
+      else docDetails.value[doc.doc_no] = [];
+    } catch {
+      docDetails.value[doc.doc_no] = [];
+    }
+  }
+  printDetails.value = docDetails.value[doc.doc_no] || [];
+  await new Promise((r) => setTimeout(r, 80));
+  window.print();
 };
 
 // Format number to 2 decimal places
@@ -640,5 +708,109 @@ const getStatusIcon = (status) => {
 :deep(.p-tag.p-tag-secondary) {
   background: linear-gradient(135deg, #6b7280, #4b5563) !important;
   color: white;
+}
+
+/* Print button */
+:deep(.print-btn) {
+  color: #6366f1 !important;
+  width: 2rem !important;
+  height: 2rem !important;
+}
+:deep(.print-btn:hover) {
+  background: #eef2ff !important;
+}
+
+/* Print Area — hidden on screen, shown on print */
+#print-area {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible !important;
+  }
+  #print-area {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80mm;
+  }
+}
+
+/* Slip 80mm styles */
+.slip-doc {
+  width: 72mm;
+  margin: 0 auto;
+  font-family: "Sarabun", "Tahoma", sans-serif;
+  font-size: 11pt;
+  color: #000;
+}
+.slip-shop-name {
+  text-align: center;
+  font-size: 14pt;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.slip-divider-dash {
+  border-top: 1px dashed #000;
+  margin: 4px 0;
+}
+.slip-divider-dot {
+  border-top: 1px dotted #999;
+  margin: 3px 0;
+}
+.slip-row {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0;
+  font-size: 10pt;
+}
+.slip-label {
+  min-width: 60px;
+  color: #555;
+  flex-shrink: 0;
+}
+.slip-section-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 10pt;
+  margin: 2px 0;
+}
+.slip-item {
+  margin: 3px 0;
+  font-size: 9.5pt;
+}
+.slip-item-name {
+  font-weight: 500;
+}
+.slip-item-detail {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 8px;
+  color: #333;
+}
+.slip-empty {
+  text-align: center;
+  font-size: 9pt;
+  color: #888;
+  margin: 4px 0;
+}
+.slip-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12pt;
+  font-weight: bold;
+  padding: 2px 0;
+}
+.slip-footer {
+  text-align: center;
+  font-size: 9.5pt;
+  color: #555;
+  margin-top: 4px;
 }
 </style>

@@ -5,18 +5,17 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <Button
-          icon="pi pi-arrow-left"
-          class="p-button-text p-button-rounded"
-          @click="router.push({ name: 'mainmenu' })"
-          v-tooltip.bottom="'กลับเมนูหลัก'"
-        />
+        <Button icon="pi pi-arrow-left" class="p-button-text p-button-rounded" @click="router.push({ name: 'mainmenu' })" v-tooltip.bottom="'กลับเมนูหลัก'" />
         <h1><i class="pi pi-cog mr-2"></i>จัดการสถานะ</h1>
       </div>
       <div class="header-right">
-        <span class="doc-count" v-if="docList.length > 0">
-          <i class="pi pi-file mr-1"></i>{{ docList.length }} รายการ
-        </span>
+        <div class="sound-switch-wrap">
+          <i :class="soundEnabled ? 'pi pi-volume-up sound-icon-on' : 'pi pi-volume-off sound-icon-off'"></i>
+          <span class="sound-label">เสียงแจ้งเตือน</span>
+          <InputSwitch v-model="soundEnabled" @change="onSoundSwitchChange" />
+          <span :class="soundEnabled ? 'sound-state-on' : 'sound-state-off'">{{ soundEnabled ? 'เปิด' : 'ปิด' }}</span>
+        </div>
+        <span class="doc-count" v-if="docList.length > 0"> <i class="pi pi-file mr-1"></i>{{ docList.length }} รายการ </span>
       </div>
     </div>
 
@@ -26,19 +25,14 @@
         <div class="search-field">
           <label>จากวันที่</label>
           <Calendar v-model="fromDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
-        </div>        <div class="search-field">
+        </div>
+        <div class="search-field">
           <label>ถึงวันที่</label>
           <Calendar v-model="toDate" dateFormat="dd/mm/yy" :showIcon="true" class="w-full" />
         </div>
         <div class="search-field">
           <label>สถานะ</label>
-          <Dropdown
-            v-model="filterStatus"
-            :options="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            class="w-full"
-          />
+          <Dropdown v-model="filterStatus" :options="statusOptions" optionLabel="label" optionValue="value" class="w-full" />
         </div>
         <div class="search-field search-field-grow">
           <label>ค้นหา</label>
@@ -52,7 +46,8 @@
     </div>
 
     <!-- Data Table -->
-    <div class="table-section">      <DataTable
+    <div class="table-section">
+      <DataTable
         :value="docList"
         :loading="loading"
         stripedRows
@@ -127,25 +122,16 @@
             <div class="text-center">{{ slotProps.index + 1 }}</div>
           </template>
         </Column>
-            <Column field="status" header="สถานะ" style="min-width: 130px">
+        <Column field="status" header="สถานะ" style="min-width: 130px">
           <template #body="slotProps">
-            <Tag
-              :value="getStatusText(slotProps.data.status)"
-              :severity="getStatusSeverity(slotProps.data.status)"
-              :icon="getStatusIcon(slotProps.data.status)"
-            />
+            <Tag :value="getStatusText(slotProps.data.status)" :severity="getStatusSeverity(slotProps.data.status)" :icon="getStatusIcon(slotProps.data.status)" />
           </template>
         </Column>
 
-        <Column header="ดำเนินการ" style="min-width: 120px; text-align: center" frozen alignFrozen="right">
-          <template #body="slotProps">            <div class="flex justify-content-center">
-              <Button
-                v-if="slotProps.data.status === 'pending'"
-                label="รับงาน"
-                icon="pi pi-play"
-                class="p-button-sm p-button-info action-btn"
-                @click="openEmployeeDialog(slotProps.data, 'getjob')"
-              />
+        <Column header="ดำเนินการ" style="min-width: 160px; text-align: center" frozen alignFrozen="right">
+          <template #body="slotProps">
+            <div class="flex justify-content-center align-items-center gap-1">
+              <Button v-if="slotProps.data.status === 'pending'" label="รับงาน" icon="pi pi-play" class="p-button-sm p-button-info action-btn" @click="openEmployeeDialog(slotProps.data, 'getjob')" />
               <Button
                 v-else-if="slotProps.data.status === 'in-progress'"
                 label="ปิดงาน"
@@ -164,7 +150,11 @@
             </div>
           </template>
         </Column>
-
+        <Column field="" header="พิมพ์" style="min-width: 80px; text-align: center" frozen alignFrozen="right">
+          <template #body="slotProps">
+            <Button icon="pi pi-print" class="p-button-sm p-button-rounded p-button-text print-btn" v-tooltip.top="'พิมพ์เอกสาร'" @click="printDoc(slotProps.data)" />
+          </template>
+        </Column>
         <Column field="doc_no" header="เลขที่เอกสาร" style="min-width: 150px">
           <template #body="slotProps">
             <span class="font-semibold" style="color: #1e40af">{{ slotProps.data.doc_no }}</span>
@@ -195,23 +185,17 @@
 
         <Column field="emp_open_job" header="ผู้รับงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_open_job" class="emp-name">
-              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_open_job }}
-            </span>
+            <span v-if="slotProps.data.emp_open_job" class="emp-name"> <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_open_job }} </span>
             <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
           </template>
         </Column>
 
         <Column field="emp_close_job" header="ผู้ปิดงาน" style="min-width: 120px">
           <template #body="slotProps">
-            <span v-if="slotProps.data.emp_close_job" class="emp-name">
-              <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_close_job }}
-            </span>
+            <span v-if="slotProps.data.emp_close_job" class="emp-name"> <i class="pi pi-user mr-1" style="font-size: 0.75rem"></i>{{ slotProps.data.emp_close_job }} </span>
             <span v-else class="text-color-secondary" style="font-size: 0.85rem">—</span>
           </template>
         </Column>
-
-    
       </DataTable>
     </div>
 
@@ -274,13 +258,7 @@
         <!-- สรุปผล (เฉพาะปิดงาน) -->
         <div class="field mb-0" v-if="dialogMode === 'complete'">
           <label class="font-semibold mb-2 block"><i class="pi pi-pencil mr-1"></i>สรุปผลการดำเนินการ</label>
-          <Textarea
-            v-model="remarkText"
-            rows="3"
-            class="w-full"
-            placeholder="ระบุสรุปผลการดำเนินการ..."
-            autoResize
-          />
+          <Textarea v-model="remarkText" rows="3" class="w-full" placeholder="ระบุสรุปผลการดำเนินการ..." autoResize />
         </div>
       </div>
 
@@ -291,7 +269,7 @@
             <i :class="dialogMode === 'getjob' ? 'pi pi-play' : 'pi pi-stop-circle'" style="font-size: 1.8rem"></i>
           </div>
         </div>
-        <div class="confirm-title">{{ dialogMode === 'getjob' ? 'ยืนยันรับงาน' : 'ยืนยันปิดงาน' }}</div>
+        <div class="confirm-title">{{ dialogMode === "getjob" ? "ยืนยันรับงาน" : "ยืนยันปิดงาน" }}</div>
         <div class="confirm-details">
           <div class="confirm-detail-row">
             <span class="detail-label">เอกสาร</span>
@@ -312,7 +290,8 @@
         </div>
       </div>
 
-      <template #footer>        <div class="flex justify-content-between w-full" v-if="showConfirmStep">
+      <template #footer>
+        <div class="flex justify-content-between w-full" v-if="showConfirmStep">
           <Button label="ย้อนกลับ" icon="pi pi-arrow-left" class="p-button-text p-button-secondary" @click="showConfirmStep = false" />
           <Button
             :label="dialogMode === 'getjob' ? 'ตกลง รับงาน' : 'ตกลง ปิดงาน'"
@@ -336,15 +315,54 @@
       </template>
     </Dialog>
 
+    <!-- Print Area (hidden, shown only on print) -->
+    <div id="print-area">
+      <div class="slip-doc" v-if="printData">
+      <div class="slip-shop-name">ใบงานจัดรถ</div>
+        <div class="slip-divider-dash"></div>
+
+        <div class="slip-row">
+          <span class="slip-label">เลขที่ :</span><strong>{{ printData.doc_no }}</strong>
+        </div>
+        <div class="slip-row"><span class="slip-label">วันที่ :</span>{{ printData.doc_date }} {{ printData.doc_time }} น.</div>
+        <div class="slip-divider-dot"></div>
+        <div class="slip-row"><span class="slip-label">ลูกค้า :</span>{{ printData.cust_name }}</div>
+        <div class="slip-row" v-if="printData.cust_code"><span class="slip-label">รหัส :</span>{{ printData.cust_code }}</div>
+        <div class="slip-row"><span class="slip-label">ยี่ห้อ :</span>{{ printData.car_brand }}</div>
+        <div class="slip-row">
+          <span class="slip-label">ทะเบียน :</span><strong>{{ printData.car_code }}</strong>
+        </div>
+        <div class="slip-row"><span class="slip-label">สถานะ :</span>{{ getStatusText(printData.status) }}</div>
+        <div class="slip-row" v-if="printData.emp_open_job"><span class="slip-label">ผู้รับงาน :</span>{{ printData.emp_open_job }}</div>
+        <div class="slip-row" v-if="printData.emp_close_job"><span class="slip-label">ผู้ปิดงาน :</span>{{ printData.emp_close_job }}</div>
+
+        <div class="slip-divider-dash"></div>
+        <div class="slip-section-title">รายละเอียดรายการ</div>
+        <div class="slip-divider-dot"></div>
+
+        <template v-if="printDetails && printDetails.length > 0">
+          <div class="slip-item" v-for="(item, idx) in printDetails" :key="idx">
+            <div class="slip-item-name">{{ idx + 1 }}. [{{ item.item_code }}] {{ item.item_name }}</div>
+            <div class="slip-item-detail">
+              <span>{{ formatNumber(item.qty) }} {{ item.unit_name }} x {{ formatNumber(item.price) }}</span>
+              <strong>{{ formatNumber(item.sum_amount) }}</strong>
+            </div>
+          </div>
+        </template>
+        <div v-else class="slip-empty">-- ไม่พบรายละเอียด --</div>
+
+        <div class="slip-divider-dash"></div>
+        <div class="slip-total-row">
+          <span>รวมทั้งสิ้น</span>
+          <strong>{{ formatNumber(printDetails.reduce((s, i) => s + parseFloat(i.sum_amount || 0), 0)) }}</strong>
+        </div>
+        <div class="slip-divider-dash"></div>
+
+      </div>
+    </div>
+
     <!-- Confirm Close Job Dialog (เสร็จงาน) -->
-    <Dialog
-      v-model:visible="showConfirmCloseDialog"
-      :modal="true"
-      :style="{ width: '420px' }"
-      :closable="true"
-      :draggable="false"
-      :showHeader="false"
-    >
+    <Dialog v-model:visible="showConfirmCloseDialog" :modal="true" :style="{ width: '420px' }" :closable="true" :draggable="false" :showHeader="false">
       <div class="confirm-close-body">
         <div class="confirm-icon-area">
           <div class="confirm-circle circle-success">
@@ -368,7 +386,8 @@
           </div>
         </div>
       </div>
-      <template #footer>        <div class="flex justify-content-center gap-3 w-full">
+      <template #footer>
+        <div class="flex justify-content-center gap-3 w-full">
           <Button label="ยกเลิก" icon="pi pi-times" class="p-button-outlined p-button-secondary" style="min-width: 120px" @click="showConfirmCloseDialog = false" />
           <Button label="ตกลง เสร็จงาน" icon="pi pi-check" class="p-button-success" style="min-width: 140px" :loading="saving" @click="doCloseJob" />
         </div>
@@ -378,7 +397,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import MasterdataService from "@/services/MasterdataService";
@@ -422,6 +441,61 @@ const showConfirmStep = ref(false);
 const showConfirmCloseDialog = ref(false);
 const confirmCloseDoc = ref(null);
 
+// Sound notification
+const soundEnabled = ref(localStorage.getItem("_soundEnabled") !== "false");
+let soundInterval = null;
+let audioCtx = null;
+
+const onSoundSwitchChange = () => {
+  localStorage.setItem("_soundEnabled", soundEnabled.value);
+};
+
+const playBeep = () => {
+  try {
+    // eslint-disable-next-line
+    if (!audioCtx) audioCtx = new (window.AudioContext || window["webkitAudioContext"])();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.4);
+  } catch (e) {
+    console.warn("Audio error:", e);
+  }
+};
+
+const checkAndPlaySound = () => {
+  if (!soundEnabled.value) return;
+  const hasPending = docList.value.some((d) => d.status === "pending");
+  if (hasPending) playBeep();
+};
+
+// Print
+const printData = ref(null);
+const printDetails = ref([]);
+
+const printDoc = async (doc) => {
+  printData.value = doc;
+  // Load details if not yet loaded
+  if (!docDetails.value[doc.doc_no]) {
+    try {
+      const res = await MasterdataService.getCarDocDetail(doc.doc_no);
+      if (res.success) docDetails.value[doc.doc_no] = res.data || [];
+      else docDetails.value[doc.doc_no] = [];
+    } catch {
+      docDetails.value[doc.doc_no] = [];
+    }
+  }
+  printDetails.value = docDetails.value[doc.doc_no] || [];
+  await new Promise((r) => setTimeout(r, 80));
+  window.print();
+};
+
 // Reset confirm step when dialog opens/closes
 watch(showEmployeeDialog, (val) => {
   if (!val) {
@@ -441,12 +515,19 @@ onMounted(() => {
   toDate.value = now;
   fetchDocList();
   fetchEmployees();
+  soundInterval = setInterval(checkAndPlaySound, 10000);
+});
+
+onUnmounted(() => {
+  if (soundInterval) clearInterval(soundInterval);
+  if (audioCtx) audioCtx.close();
 });
 
 // Fetch document list
 const fetchDocList = async () => {
   loading.value = true;
-  try {    const from = Utils.getDateFormatPG(fromDate.value);
+  try {
+    const from = Utils.getDateFormatPG(fromDate.value);
     const to = Utils.getDateFormatPG(toDate.value);
     const res = await MasterdataService.getDocList(from, to, searchText.value, filterStatus.value);
     if (res.success) {
@@ -505,31 +586,46 @@ const formatNumber = (val) => {
 // Status helpers
 const getStatusText = (status) => {
   switch (status) {
-    case "pending": return "รอดำเนินการ";
-    case "in-progress": return "กำลังดำเนินการ";
-    case "completed": return "ปิดงาน";
-    case "closed": return "ปิดงานแล้ว";
-    default: return status;
+    case "pending":
+      return "รอดำเนินการ";
+    case "in-progress":
+      return "กำลังดำเนินการ";
+    case "completed":
+      return "ปิดงาน";
+    case "closed":
+      return "ปิดงานแล้ว";
+    default:
+      return status;
   }
 };
 
 const getStatusSeverity = (status) => {
   switch (status) {
-    case "pending": return "warning";
-    case "in-progress": return "info";
-    case "completed": return "success";
-    case "closed": return "secondary";
-    default: return "secondary";
+    case "pending":
+      return "warning";
+    case "in-progress":
+      return "info";
+    case "completed":
+      return "success";
+    case "closed":
+      return "secondary";
+    default:
+      return "secondary";
   }
 };
 
 const getStatusIcon = (status) => {
   switch (status) {
-    case "pending": return "pi pi-clock";
-    case "in-progress": return "pi pi-spin pi-spinner";
-    case "completed": return "pi pi-check";
-    case "closed": return "pi pi-lock";
-    default: return "";
+    case "pending":
+      return "pi pi-clock";
+    case "in-progress":
+      return "pi pi-spin pi-spinner";
+    case "completed":
+      return "pi pi-check";
+    case "closed":
+      return "pi pi-lock";
+    default:
+      return "";
   }
 };
 
@@ -541,9 +637,7 @@ const openEmployeeDialog = (doc, mode) => {
   showConfirmStep.value = false;
 
   // Default: match current usercode
-  const matchedEmp = employees.value.find(
-    (emp) => emp.code.toUpperCase() === currentUserCode.value
-  );
+  const matchedEmp = employees.value.find((emp) => emp.code.toUpperCase() === currentUserCode.value);
   selectedEmployee.value = matchedEmp || null;
   showEmployeeDialog.value = true;
 };
@@ -633,6 +727,12 @@ const doCloseJob = async () => {
   color: #1e293b;
   margin: 0;
   font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .header-right .doc-count {
@@ -949,5 +1049,152 @@ const doCloseJob = async () => {
 :deep(.p-tag.p-tag-secondary) {
   background: linear-gradient(135deg, #6b7280, #4b5563) !important;
   color: white;
+}
+
+/* Sound switch */
+.sound-switch-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.sound-icon-on {
+  font-size: 1rem;
+  color: #10b981;
+}
+.sound-icon-off {
+  font-size: 1rem;
+  color: #94a3b8;
+}
+.sound-label {
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+.sound-state-on {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #10b981;
+}
+.sound-state-off {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Print button */
+:deep(.print-btn) {
+  color: #6366f1 !important;
+  width: 2rem !important;
+  height: 2rem !important;
+}
+:deep(.print-btn:hover) {
+  background: #eef2ff !important;
+}
+
+/* Print Area — hidden on screen, shown on print */
+#print-area {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible !important;
+  }
+  #print-area {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80mm;
+  }
+}
+
+/* Slip 80mm styles (only in print) */
+.slip-doc {
+  width: 72mm;
+  margin: 0 auto;
+  font-family: "Sarabun", "Tahoma", sans-serif;
+  font-size: 11pt;
+  color: #000;
+}
+
+.slip-shop-name {
+  text-align: center;
+  font-size: 14pt;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.slip-divider-dash {
+  border-top: 1px dashed #000;
+  margin: 4px 0;
+}
+
+.slip-divider-dot {
+  border-top: 1px dotted #999;
+  margin: 3px 0;
+}
+
+.slip-row {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0;
+  font-size: 10pt;
+}
+
+.slip-label {
+  min-width: 60px;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.slip-section-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 10pt;
+  margin: 2px 0;
+}
+
+.slip-item {
+  margin: 3px 0;
+  font-size: 9.5pt;
+}
+
+.slip-item-name {
+  font-weight: 500;
+}
+
+.slip-item-detail {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 8px;
+  color: #333;
+}
+
+.slip-empty {
+  text-align: center;
+  font-size: 9pt;
+  color: #888;
+  margin: 4px 0;
+}
+
+.slip-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12pt;
+  font-weight: bold;
+  padding: 2px 0;
+}
+
+.slip-footer {
+  text-align: center;
+  font-size: 9.5pt;
+  color: #555;
+  margin-top: 4px;
 }
 </style>
